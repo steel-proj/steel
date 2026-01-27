@@ -38,19 +38,14 @@ mir_module& mir_lowerer::get_module(const std::shared_ptr<compilation_unit>& uni
 	if (lowered.find(unit->unit_id) != lowered.end()) {
 		return lowered[unit->unit_id];
 	}
-	mir_module mm{};
-	lowered[unit->unit_id] = mm;
-	return lowered[unit->unit_id];
-}
 
-mir_module mir_lowerer::lower_unit(std::shared_ptr<compilation_unit> unit) {
-	mir_module mm;
+	// create new module
+	mir_module mm{};
 	mm.meta.src_relpath = unit->source_file->relative_path;
 	mm.name = unit->source_file->name();
-	
-	lower_functions(unit->declarations, mm);
 
-	return mm;
+	lowered[unit->unit_id] = mm;
+	return lowered[unit->unit_id];
 }
 
 void mir_lowerer::lower_functions(const std::vector<ast_ptr>& decls, mir_module& mm) {

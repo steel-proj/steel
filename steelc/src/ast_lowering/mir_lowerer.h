@@ -24,7 +24,6 @@ private:
 
 	mir_module& get_module(const std::shared_ptr<compilation_unit>& unit);
 
-	mir_module lower_unit(std::shared_ptr<compilation_unit> unit);
 	void lower_functions(const std::vector<ast_ptr>& decls, mir_module& mm);
 
 	mir_function lower_func(std::shared_ptr<function_declaration> func);
