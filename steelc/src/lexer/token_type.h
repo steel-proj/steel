@@ -67,6 +67,7 @@ enum token_type {
 	// Keywords (modifiers)
 	TT_STATIC,
 	TT_EXPORT,
+	TT_EXTERN,
 
 	// Operators
 	TT_ASSIGN,
