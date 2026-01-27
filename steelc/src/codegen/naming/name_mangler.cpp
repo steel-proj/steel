@@ -14,6 +14,11 @@
 #include <codegen/error/codegen_exception.h>
 
 std::string name_mangler::mangle_function(const mir_function& fn_mir) {
+	if (fn_mir.no_mangle) {
+		// no mangling
+		return fn_mir.name;
+	}
+
 	std::vector<mir_type> param_types;
 	for (const auto& param : fn_mir.params) {
 		param_types.push_back(param.type);

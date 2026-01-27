@@ -36,6 +36,7 @@ public:
 	std::vector<mir_type> generic_args;
 	std::vector<mir_function_param> params;
 	std::vector<mir_block> blocks;
+	bool no_mangle = false;
 
 private:
 	uint32_t next_value_id = 0;

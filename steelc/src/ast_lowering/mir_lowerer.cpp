@@ -75,6 +75,7 @@ mir_function mir_lowerer::lower_func(std::shared_ptr<function_declaration> func)
 	if (func->parent_module && !func->parent_module->is_global()) {
 		mf.scopes = std::move(func->parent_module->name_path());
 	}
+	mf.no_mangle = func->no_mangle;
 
 	// generics
 	if (func->is_generic && func->is_generic_instance) {
