@@ -86,6 +86,7 @@ public:
 		cloned->overridden_function = overridden_function;
 		cloned->is_entry_point = false; // entry point status is not cloned
 		cloned->implicitly_returns = implicitly_returns;
+		cloned->no_mangle = no_mangle;
 		// note: overridden_function is not cloned
 		// dont clone ref
 		return cloned;
