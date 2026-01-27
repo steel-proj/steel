@@ -18,28 +18,31 @@ llvm::Function* llvm_function_builder::build(const mir_function& fn_mir, llvm::M
 	auto linkage = llvm::Function::ExternalLinkage;
 	auto fn_type = get_llvm_fn_type(fn_mir);
 
+	// (mangled) name
 	std::string name = mangler.mangle_function(fn_mir);
-	llvm::Function* fn = llvm::Function::Create(
-		/* Function Type */ fn_type,
-		/* Linkage */ linkage,
-		/* Name */ name,
-		/* Module */ module
-	);
 
-	// name the function arguments
-	/*auto arg_iter = fn->arg_begin();
-	if (func_ast->is_method) {
-		// name this pointer (if applicable)
-		arg_iter->setName(codegen_constants::THIS_PARAM_NAME);
-		++arg_iter;
-	}*/
-	auto arg_iter = fn->arg_begin();
-	for (const auto& param : fn_mir.params) {
-		arg_iter->setName(param.name);
-		++arg_iter;
+	llvm::Function* func = module->getFunction(name);
+	if (!func) {
+		func = llvm::Function::Create(
+			/* type */ fn_type,
+			/* linkage */ linkage,
+			/* name (mangled) */ name,
+			/* module */ module
+		);
+
+		// name args (only at creation)
+		auto arg_iter = func->arg_begin();
+		for (const auto& param : fn_mir.params) {
+			arg_iter->setName(param.name);
+			++arg_iter;
+		}
 	}
 
-	return fn;
+	if (func->getFunctionType() != fn_type) {
+		throw codegen_exception("Function re-declaration with different type: " + name);
+	}
+
+	return func;
 }
 llvm::FunctionType* llvm_function_builder::get_llvm_fn_type(const mir_function& fn_mir) {
 	auto return_type = type_converter.convert(fn_mir.return_type);
