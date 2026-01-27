@@ -48,6 +48,7 @@ void type_checker::visit(std::shared_ptr<function_declaration> func) {
 		else {
 			ctx.module_manager.entry_point = func;
 			func->is_entry_point = true;
+			func->no_mangle = true; // dont mangle entry point
 		}
 	}
 	else {
