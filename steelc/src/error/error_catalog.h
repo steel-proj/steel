@@ -159,6 +159,8 @@ enum error_code {
     ERR_INVALID_INTERFACE_MODIFIER,
     ERR_INVALID_MODULE_MODIFIER,
     ERR_INVALID_ENUM_MODIFIER,
+    ERR_EXTERN_FUNCTION_CANT_HAVE_BODY,
+    ERR_FUNCTION_MUST_HAVE_BODY,
 };
 
 enum warning_code {
@@ -175,6 +177,7 @@ enum advice_code {
     ADV_CONDITIONAL_NOT_GUARANTEED_TO_RETURN,
     ADV_IMPLEMENT_INTERFACE_METHOD,
     ADV_USE_POINTER_INSTEAD_OF_OWN_TYPE,
+	ADV_USE_EXTERN_MODIFIER,
 };
 
 struct error_catalog {
@@ -332,6 +335,8 @@ struct error_catalog {
             {"S163", "Invalid interface modifier '%s'"},
             {"S164", "Invalid module modifier '%s'"},
             {"S165", "Invalid enum modifier '%s'"},
+            {"S166", "Function '%s' cannot have a body as it has been marked extern"},
+            {"S167", "Function '%s' must have a body as it has not been marked extern"},
         };
         return errors[code - 1 /* -1 to avoid ERR_SUCCESS */];
     }
@@ -354,6 +359,7 @@ struct error_catalog {
             {"SA01", "Conditional returns are not guaranteed to return, ensure an unconditional return is present incase all conditional returns are not executed"},
             {"SA02", "Implement required interface method: '%s'"},
             {"SA03", "To store objects of a type within itself, consider using a pointer (%s*)"},
+            {"SA04", "To declare a function that exists outside of your program, consider using the 'extern' keyword. E.g., 'extern func %s(...);'"},
         };
         return advices[code];
 	}

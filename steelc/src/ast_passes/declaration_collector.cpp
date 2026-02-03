@@ -51,8 +51,19 @@ void declaration_collector::visit(std::shared_ptr<function_declaration> func_dec
 		ERROR(ERR_OVERRIDE_CANT_BE_GENERIC, func_decl->span);
 	}
 
+	// body logic
+	if (flags & MOD_EXTERN && !func_decl->is_abstract()) {
+		ERROR(ERR_EXTERN_FUNCTION_CANT_HAVE_BODY, func_decl->span, func_decl->identifier.c_str());
+	}
+	else if (!(flags & MOD_EXTERN) && func_decl->is_abstract()) {
+		ERROR(ERR_FUNCTION_MUST_HAVE_BODY, func_decl->span, func_decl->identifier.c_str());
+		ADVISE(ADV_USE_EXTERN_MODIFIER, func_decl->span, func_decl->identifier.c_str());
+	}
+
 	// TODO: this should be a type checker variable check
 	// void parameters are not allowed in functions & constructors
+	// now that i think about it, should we accept here?
+	// since parameters are just variable declarations
 	for (const auto& param : func_decl->parameters) {
 		if (param->type->is_primitive() && param->type->primitive == DT_VOID) {
 			ERROR(ERR_PARAM_VOID_TYPE, func_decl->span);
