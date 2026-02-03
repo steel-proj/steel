@@ -23,9 +23,16 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	bool command_result = cmd->execute(args.slice(2));
+	bool command_success = false;
+	try {
+		command_success = cmd->execute(args.slice(2));
+	}
+	catch (const std::exception& e) {
+		output::err("Error: unhandled exception while executing command '{}': {}\n", console_colors::RED, command, e.what());
+		command_success = false;
+	}
 
 	output::shutdown();
 
-	return command_result ? 0 : 1;
+	return command_success ? 0 : 1;
 }
