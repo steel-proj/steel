@@ -236,10 +236,21 @@ std::string to_string(token_type tk) {
 	case TT_RBRACE: return "right brace";
 	case TT_LBRACKET: return "left bracket";
 	case TT_RBRACKET: return "right bracket";
+	case TT_HAT: return "^";
+	case TT_AMPERSAND: return "&";
+	case TT_HASH: return "#";
+	case TT_DOLLAR: return "$";
 
-	case TT_I16: return "small";
+	case TT_FUNC: return "func";
+	case TT_CONSTRUCTOR: return "constructor";
+	case TT_OVERRIDE: return "override";
+	case TT_CONST: return "const";
+	case TT_LET: return "let";
+	case TT_TYPE: return "type";
+
+	case TT_I16: return "short";
 	case TT_I32: return "int";
-	case TT_I64: return "large";
+	case TT_I64: return "long";
 	case TT_FLOAT: return "float";
 	case TT_DOUBLE: return "double";
 	case TT_CHAR: return "char";
@@ -248,18 +259,29 @@ std::string to_string(token_type tk) {
 	case TT_BOOL: return "bool";
 	case TT_VOID: return "void";
 
+	case TT_STRUCT: return "struct";
+	case TT_CLASS: return "class";
+	case TT_INTERFACE: return "interface";
+	case TT_ENUM: return "enum";
+
 	case TT_IF: return "if";
 	case TT_ELSE: return "else";
 	case TT_WHILE: return "while";
 	case TT_FOR: return "for";
 	case TT_RETURN: return "return";
+	case TT_BREAK: return "break";
 
 	case TT_TRUE: return "true";
 	case TT_FALSE: return "false";
+	case TT_NULL: return "null";
+	case TT_THIS: return "this";
+	case TT_BASE: return "base";
 
 	case TT_MODULE: return "module";
-	case TT_EXPORT: return "export";
 	case TT_IMPORT: return "import";
+	case TT_STATIC: return "static";
+	case TT_EXPORT: return "export";
+	case TT_EXTERN: return "extern";
 
 	case TT_ADD: return "+";
 	case TT_SUBTRACT: return "-";
@@ -277,8 +299,11 @@ std::string to_string(token_type tk) {
 	case TT_LESS_EQ: return "<=";
 	case TT_GREATER_EQ: return ">=";
 	case TT_MODULO: return "%";
-	case TT_NOT: return "not";
+	case TT_NOT: return "!";
 	case TT_ACCESS: return ".";
+	case TT_SCOPE: return "::";
+	case TT_ARROW: return "->";
+	case TT_AS: return "as";
 
 	case TT_EOF: return "end of file";
 
