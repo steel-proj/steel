@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <lexer/token.h>
+#include <parser/modifier.h>
 #include <utils/iclonable.h>
 #include <representations/types/types_fwd.h>
 
@@ -37,17 +38,13 @@ enum data_type_kind {
 	DT_GENERIC,
 };
 
-enum data_type_modifier {
-	DTM_NONE = 0,
-};
-
 class data_type : public iclonable<data_type>, public std::enable_shared_from_this<data_type> {
 public:
 	data_type()
-		: primitive(DT_UNKNOWN), modifiers(DTM_NONE) {
+		: primitive(DT_UNKNOWN), modifiers(0) {
 	}
 	data_type(data_type_kind primitive)
-		: primitive(primitive), modifiers(DTM_NONE) {
+		: primitive(primitive), modifiers(0) {
 	}
 
 	// static method to get primitive data type as a type_ptr
@@ -148,7 +145,7 @@ public:
 	virtual std::shared_ptr<data_type> clone() const override;
 
 	data_type_kind primitive; 
-	std::vector<data_type_modifier> modifiers;
+	std::vector<modifier> modifiers;
 	std::vector<type_ptr> generic_args;
 	code_span span;
 };

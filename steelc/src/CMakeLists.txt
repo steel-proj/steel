@@ -208,6 +208,7 @@ target_sources(steelc_core PRIVATE
     "output/output.h"
 
     # parser/
+    "parser/modifier.h"
     "parser/parser.cpp"
     "parser/parser.h"
     "parser/parser_utils.cpp"

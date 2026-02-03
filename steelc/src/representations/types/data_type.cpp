@@ -19,9 +19,7 @@ bool data_type::operator==(const type_ptr& other) const {
 	if (primitive != other->primitive) {
 		return false;
 	}
-	if (modifiers != other->modifiers) {
-		return false;
-	}
+	// TODO: account for generics + mods
 	return true;
 }
 bool data_type::operator!=(const type_ptr& other) const {

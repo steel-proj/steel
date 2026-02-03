@@ -5,15 +5,6 @@
 #include <representations/types/custom_type.h>
 #include <representations/types/container_types.h>
 
-data_type_modifier to_type_modifier(token_type tt) {
-	data_type_modifier mod;
-	switch (tt) {
-	default:
-		mod = DTM_NONE;
-	}
-	return mod;
-}
-
 data_type_kind to_primitive(token_type tt) {
     data_type_kind dt;
     switch (tt) {

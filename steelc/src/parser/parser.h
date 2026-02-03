@@ -6,6 +6,7 @@
 #include <unordered_set>
 
 #include <lexer/token.h>
+#include <parser/modifier.h>
 #include <compiler/compilation_pass.h>
 #include <ast/ast_fwd.h>
 #include <symbolics/symbol_error.h>
@@ -42,6 +43,7 @@ public:
 	std::shared_ptr<initializer_list> parse_array_initializer();
 
 	// helper functions
+	std::vector<modifier> parse_modifiers();
 	type_ptr parse_type();
 	std::vector<std::shared_ptr<expression>> parse_expression_list(token_type end = TT_RPAREN);
 	std::vector<std::shared_ptr<variable_declaration>> parse_parameter_list(token_type end = TT_RPAREN);
@@ -56,7 +58,6 @@ private:
 	token& previous();
 	token& consume();
 	bool match_primitive();
-	bool match_modifier();
 	bool match(int count, ...);
 	bool match(token_type type);
 	bool check(token_type type);

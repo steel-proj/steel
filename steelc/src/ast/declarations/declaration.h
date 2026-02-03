@@ -3,13 +3,9 @@
 #include <string>
 #include <memory>
 
+#include <parser/modifier.h>
 #include <ast/ast_node.h>
 #include <representations/entities/entities_fwd.h>
-
-typedef unsigned int declaration_modifiers;
-enum decleration_modifier {
-	DM_NONE = 0,
-};
 
 class compilation_unit;
 
@@ -17,6 +13,6 @@ class declaration : public ast_node {
 public:
 	std::weak_ptr<compilation_unit> owning_unit;
 	std::shared_ptr<module_entity> parent_module = nullptr;
-	declaration_modifiers mods = DM_NONE;
+	std::vector<modifier> modifiers;
 	std::string filename;
 };

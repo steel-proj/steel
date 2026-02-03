@@ -1,6 +1,7 @@
 #include "parser.h"
 
 #include <lexer/token_utils.h>
+#include <parser/modifier.h>
 #include <parser/parser_utils.h>
 #include <ast/ast.h>
 #include <error/error_catalog.h>
@@ -18,6 +19,8 @@ void parser::parse() {
 	}
 }
 ast_ptr parser::parse_declaration() {
+	auto mods = parse_modifiers();
+
 	// module declaration
 	if (match(TT_MODULE)) {
 		if (!match(TT_IDENTIFIER)) {
@@ -47,7 +50,9 @@ ast_ptr parser::parse_declaration() {
 			return nullptr;
 		}
 
-		return make_ast<module_declaration>(module_name_token, module_name_token.value, declarations);
+		auto decl = make_ast<module_declaration>(module_name_token, module_name_token.value, declarations);
+		decl->modifiers = mods;
+		return decl;
 	}
 	// module import
 	else if (match(TT_IMPORT)) {
@@ -814,13 +819,31 @@ std::shared_ptr<initializer_list> parser::parse_array_initializer() {
 	return list;
 }
 
+std::vector<modifier> parser::parse_modifiers() {
+	std::vector<modifier> mods;
+
+	while (true) {
+		auto& tok = peek();
+		if (match(TT_EXTERN)) {
+			mods.emplace_back(MOD_EXTERN, tok);
+		}
+		else if (match(TT_STATIC)) {
+			mods.emplace_back(MOD_STATIC, tok);
+		}
+		else if (match(TT_EXPORT)) {
+			mods.emplace_back(MOD_EXPORT, tok);
+		}
+		else if (match(TT_CONST)) {
+			mods.emplace_back(MOD_CONST, tok);
+		}
+		else break;
+	}
+
+	return mods;
+}
 type_ptr parser::parse_type() {
 	// parse through modifiers, e.g. 'const'
-	std::vector<data_type_modifier> type_mods;
-	while (match_modifier()) {
-		auto modifier = to_type_modifier(previous().type);
-		type_mods.push_back(modifier);
-	}
+	auto type_mods = parse_modifiers();
 
 	// match typename (custom or primitive)
 	type_ptr type = data_type::UNKNOWN;
@@ -958,9 +981,6 @@ bool parser::match_primitive() {
 		return true;
 	}
 	return false;
-}
-bool parser::match_modifier() {
-	return match(3, TT_CONST, TT_STATIC, TT_EXPORT);
 }
 bool parser::match(int count, ...) {
 	va_list args;
