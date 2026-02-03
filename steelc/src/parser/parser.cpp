@@ -21,6 +21,8 @@ void parser::parse() {
 ast_ptr parser::parse_declaration() {
 	auto mods = parse_modifiers();
 
+	std::shared_ptr<declaration> decl = nullptr;
+
 	// module declaration
 	if (match(TT_MODULE)) {
 		if (!match(TT_IDENTIFIER)) {
@@ -50,9 +52,7 @@ ast_ptr parser::parse_declaration() {
 			return nullptr;
 		}
 
-		auto decl = make_ast<module_declaration>(module_name_token, module_name_token.value, declarations);
-		decl->modifier_tokens = mods;
-		return decl;
+		decl = make_ast<module_declaration>(module_name_token, module_name_token.value, declarations);
 	}
 	// module import
 	else if (match(TT_IMPORT)) {
@@ -73,28 +73,34 @@ ast_ptr parser::parse_declaration() {
 			return nullptr;
 		}
 		
+		// TODO: not technically even a declaration - i should move this
 		return make_ast<import_statement>(module_token, module_path);
 	}
 	// type declaration
 	else if (match(3, TT_STRUCT, TT_CLASS, TT_INTERFACE)) {
 		token& kind_token = previous();
-		return parse_type_declaration(kind_token);
+		decl = parse_type_declaration(kind_token);
 	}
 	// enum declaration
 	else if (match(TT_ENUM)) {
-		return parse_enum_declaration();
+		decl = parse_enum_declaration();
 	}
 	// function declaration
 	else if (match(TT_FUNC) || match(TT_OVERRIDE)) {
-		return parse_function_declaration(false, previous().type == TT_OVERRIDE);
+		decl = parse_function_declaration(false, previous().type == TT_OVERRIDE);
 	}
 	// variable declaration
 	else if (match(TT_CONST) || match(TT_LET)) {
 		bool is_const = previous().type == TT_CONST;
-		return parse_variable_declaration(is_const);
+		decl = parse_variable_declaration(is_const);
 	}
 	else {
 		ERROR_TOKEN(ERR_DECLARATION_EXPECTED, peek());
+	}
+
+	if (decl) {
+		decl->modifier_tokens = mods;
+		return decl;
 	}
 	return nullptr;
 }
