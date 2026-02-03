@@ -51,7 +51,7 @@ ast_ptr parser::parse_declaration() {
 		}
 
 		auto decl = make_ast<module_declaration>(module_name_token, module_name_token.value, declarations);
-		decl->modifiers = mods;
+		decl->modifier_tokens = mods;
 		return decl;
 	}
 	// module import

@@ -150,6 +150,15 @@ enum error_code {
     ERR_FIELD_CANNOT_BE_OWN_TYPE,
     ERR_MEMBER_ACCESS_NOT_ON_VARIABLE,
     ERR_NO_MATCHING_FUNCTION_GENERIC,
+    ERR_DUPLICATE_MODIFIER,
+    ERR_INVALID_MODIFIER_COMBINATION,
+    ERR_INVALID_FUNCTION_MODIFIER,
+    ERR_INVALID_VARIABLE_MODIFIER,
+    ERR_INVALID_CLASS_MODIFIER,
+    ERR_INVALID_STRUCT_MODIFIER,
+    ERR_INVALID_INTERFACE_MODIFIER,
+    ERR_INVALID_MODULE_MODIFIER,
+    ERR_INVALID_ENUM_MODIFIER,
 };
 
 enum warning_code {
@@ -314,6 +323,15 @@ struct error_catalog {
             {"S154", "The recursive field '%s' of type '%s' has infinite size"},
             {"S155", "Non-static member access only allowed on variables"},
             {"S156", "No overload of function '%s' accepts %i generic argument(s)"},
+            {"S157", "Duplicate modifier '%s'"},
+            {"S158", "Invalid combination of modifiers"},
+            {"S159", "Invalid function modifier '%s'"},
+            {"S160", "Invalid variable modifier '%s'"},
+            {"S161", "Invalid class modifier '%s'"},
+            {"S162", "Invalid struct modifier '%s'"},
+            {"S163", "Invalid interface modifier '%s'"},
+            {"S164", "Invalid module modifier '%s'"},
+            {"S165", "Invalid enum modifier '%s'"},
         };
         return errors[code - 1 /* -1 to avoid ERR_SUCCESS */];
     }
