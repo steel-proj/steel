@@ -58,17 +58,17 @@ llvm::Function* llvm_code_generator::emit_function(const mir_function& fn_mir) {
 	llvm::Function* fn_llvm = fn_builder.build(fn_mir, module.get());
 	current_func = fn_llvm;
 
-	//env = std::make_unique<codegen_env>(*module, *fn_llvm, builder);
+	if (!(fn_mir.flags & MIR_FUNC_NO_BODY)) {
+		// map parameter values -> llvm values
+		unsigned param_index = 0;
+		for (const auto& param : fn_mir.params) {
+			auto llvm_arg = fn_llvm->getArg(param_index++);
+			current_ssa.set(param.value.get_id(), llvm_arg);
+		}
 
-	// map parameter values -> llvm values
-	unsigned param_index = 0;
-	for (const auto& param : fn_mir.params) {
-		auto llvm_arg = fn_llvm->getArg(param_index++);
-		current_ssa.set(param.value.get_id(), llvm_arg);
-	}
-
-	for (const auto& block : fn_mir.blocks) {
-		emit_block(block);
+		for (const auto& block : fn_mir.blocks) {
+			emit_block(block);
+		}
 	}
 
 	current_func = nullptr;

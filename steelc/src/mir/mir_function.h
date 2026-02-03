@@ -15,6 +15,13 @@ struct mir_function_param {
 	mir_value value;
 };
 
+typedef uint32_t mir_function_flags;
+enum mir_function_flag : uint32_t {
+	MIR_FUNC_NONE = 0,
+	MIR_FUNC_NO_MANGLE = 1 << 0,
+	MIR_FUNC_NO_BODY = 1 << 1,
+};
+
 class mir_function{
 public:
 	mir_function() = default;
@@ -36,7 +43,7 @@ public:
 	std::vector<mir_type> generic_args;
 	std::vector<mir_function_param> params;
 	std::vector<mir_block> blocks;
-	bool no_mangle = false;
+	mir_function_flags flags = MIR_FUNC_NONE;
 
 private:
 	uint32_t next_value_id = 0;

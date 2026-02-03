@@ -14,7 +14,7 @@
 #include <codegen/error/codegen_exception.h>
 
 std::string name_mangler::mangle_function(const mir_function& fn_mir) {
-	if (fn_mir.no_mangle) {
+	if (fn_mir.flags & MIR_FUNC_NO_MANGLE) {
 		// no mangling
 		return fn_mir.name;
 	}

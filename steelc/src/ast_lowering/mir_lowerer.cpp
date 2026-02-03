@@ -75,7 +75,7 @@ mir_function mir_lowerer::lower_func(std::shared_ptr<function_declaration> func)
 	if (func->parent_module && !func->parent_module->is_global()) {
 		mf.scopes = std::move(func->parent_module->name_path());
 	}
-	mf.no_mangle = func->no_mangle;
+	mf.flags |= MIR_FUNC_NO_MANGLE;
 
 	// generics
 	if (func->is_generic && func->is_generic_instance) {
@@ -92,6 +92,11 @@ mir_function mir_lowerer::lower_func(std::shared_ptr<function_declaration> func)
 		// create values for the parameters here to be used later
 		auto pval = mf.make_value({ param->type }, param->identifier);
 		mf.params.push_back(mir_function_param{ param->type, param->identifier, pval});
+	}
+
+	if (func->is_abstract()) {
+		mf.flags |= MIR_FUNC_NO_BODY;
+		return mf; // no body to lower
 	}
 
 	// entry block
