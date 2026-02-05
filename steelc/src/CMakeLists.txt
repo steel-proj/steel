@@ -208,6 +208,7 @@ target_sources(steelc_core PRIVATE
     "output/output.h"
 
     # parser/
+    
     "parser/modifier.h"
     "parser/parser.cpp"
     "parser/parser.h"
@@ -296,7 +297,7 @@ target_sources(steelc_core PRIVATE
     "utils/path_utils.h"
     "utils/string_utils.h"
     "utils/string_utils.cpp"
-)
+ "ast/metadata/attribute.h")
 
 target_include_directories(steelc_core
 PUBLIC

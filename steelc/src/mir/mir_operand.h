@@ -31,10 +31,7 @@ struct mir_string_imm {
 };
 
 struct mir_func_ref {
-	mir_type type; // function type not return type
-	std::vector<mir_type> generic_args;
-	std::string name;
-	std::vector<std::string> scopes;
+	const mir_function* function;
 };
 
 struct mir_field_ref {
@@ -66,7 +63,7 @@ inline mir_type operand_type(const mir_operand& op) {
 			return arg.type;
 		}
 		else if constexpr (std::is_same_v<T, mir_func_ref>) {
-			return arg.type;
+			return arg.function->return_type;
 		}
 		else if constexpr (std::is_same_v<T, mir_field_ref>) {
 			// field refs do not have a type themselves

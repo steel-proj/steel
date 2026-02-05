@@ -129,10 +129,13 @@ std::string mir_printer::operand_to_str(const mir_operand& operand) {
 		}
 		else if constexpr (std::is_same_v<T, mir_func_ref>) {
 			std::string result;
-			for (const auto& scope : arg.scopes) {
+			if (!arg.function) {
+				return "func(<unknown>)";
+			}
+			for (const auto& scope : arg.function->scopes) {
 				result += scope + "::";
 			}
-			result += arg.name;
+			result += arg.function->name;
 			return "func(" + result + ")";
 		}
 		else if constexpr (std::is_same_v<T, mir_field_ref>) {

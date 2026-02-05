@@ -39,6 +39,7 @@
 #include <ast/expressions/function_call.h>
 #include <ast/expressions/literal.h>
 #include <ast/generics/generic_parameter.h>
+#include <ast/metadata/attribute.h>
 #include <ast/enums/enum_option.h>
 
 // helper functions to create AST nodes

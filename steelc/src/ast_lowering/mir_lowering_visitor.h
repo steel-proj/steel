@@ -22,8 +22,8 @@
 
 class mir_lowering_visitor : public ast_visitor {
 public:
-	mir_lowering_visitor(mir_function& current_func)
-		: current_func(current_func) {
+	mir_lowering_visitor(mir_function& current_func, const std::unordered_map<const function_declaration*, mir_function*>& func_map)
+		: current_func(current_func), func_map(func_map) {
 	}
 
 	void visit(std::shared_ptr<variable_declaration> var) override;
@@ -51,6 +51,7 @@ public:
 
 private:
 	mir_function& current_func;
+	const std::unordered_map<const function_declaration*, mir_function*>& func_map;
 	mir_builder builder;
 
 	std::vector<std::unordered_map<std::string, mir_operand>> locals_stack;

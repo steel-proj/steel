@@ -55,7 +55,7 @@ codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codege
 
 llvm::Function* llvm_code_generator::emit_function(const mir_function& fn_mir) {
 	current_ssa.values.clear(); // reset SSA values
-	llvm::Function* fn_llvm = fn_builder.build(fn_mir, module.get());
+	llvm::Function* fn_llvm = fn_builder.get_or_build(fn_mir, module.get());
 	current_func = fn_llvm;
 
 	if (!(fn_mir.flags & MIR_FUNC_NO_BODY)) {
@@ -334,19 +334,10 @@ llvm::Value* llvm_code_generator::lower_operand(const mir_operand& op_mir) {
 			return builder.CreateGlobalStringPtr(arg.value);
 		}
 		else if constexpr (std::is_same_v<T, mir_func_ref>) {
-			std::string mangled = mangler.mangle_function(arg);
-			if (llvm::Function* fn = module->getFunction(mangled)) {
-				return fn;
+			if (!arg.function) {
+				throw codegen_exception("Function reference is null");
 			}
-			// not defined in module - declare and return
-			llvm::FunctionType* fn_type = llvm::cast<llvm::FunctionType>(ty_converter.convert(arg.type));
-			llvm::Function* fn = llvm::Function::Create(
-				fn_type,
-				llvm::Function::ExternalLinkage,
-				mangled,
-				module.get()
-			);
-			return fn;
+			return fn_builder.get_or_build(*arg.function, module.get());
 		}
 		else if constexpr (std::is_same_v<T, mir_field_ref>) {
 			// handle field reference

@@ -43,6 +43,7 @@ public:
 	std::shared_ptr<initializer_list> parse_array_initializer();
 
 	// helper functions
+	std::vector<std::shared_ptr<attribute>> parse_attributes();
 	std::vector<modifier> parse_modifiers();
 	type_ptr parse_type();
 	std::vector<std::shared_ptr<expression>> parse_expression_list(token_type end = TT_RPAREN);

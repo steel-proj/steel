@@ -19,6 +19,7 @@ void parser::parse() {
 	}
 }
 ast_ptr parser::parse_declaration() {
+	auto attrs = parse_attributes();
 	auto mods = parse_modifiers();
 
 	std::shared_ptr<declaration> decl = nullptr;
@@ -99,6 +100,7 @@ ast_ptr parser::parse_declaration() {
 	}
 
 	if (decl) {
+		decl->attributes = attrs;
 		decl->modifier_tokens = mods;
 		return decl;
 	}
@@ -825,6 +827,35 @@ std::shared_ptr<initializer_list> parser::parse_array_initializer() {
 	return list;
 }
 
+std::vector<std::shared_ptr<attribute>> parser::parse_attributes() {
+	if (!match(TT_HASH)) {
+		return {};
+	}
+
+	if (!match(TT_LBRACKET)) {
+		ERROR_TOKEN(ERR_LBRACKET_EXPECTED, peek());
+		return {};
+	}
+
+	std::vector<std::shared_ptr<attribute>> attrs;
+
+	do {
+		if (!match(TT_IDENTIFIER)) {
+			ERROR_TOKEN(ERR_ATTRIBUTE_EXPECTED, peek());
+			return {};
+		}
+
+		token& attr_name_token = previous();
+		attrs.push_back(make_ast<attribute>(attr_name_token, attr_name_token.value));
+	} while (match(TT_COMMA));
+
+	if (!match(TT_RBRACKET)) {
+		ERROR_TOKEN(ERR_RBRACKET_EXPECTED, peek());
+		return {};
+	}
+
+	return attrs;
+}
 std::vector<modifier> parser::parse_modifiers() {
 	std::vector<modifier> mods;
 

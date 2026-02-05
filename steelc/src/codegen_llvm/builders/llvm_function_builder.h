@@ -16,7 +16,7 @@ public:
 		: type_converter(type_converter) {
 	}
 
-	llvm::Function* build(const mir_function& fn_mir, llvm::Module* module);
+	llvm::Function* get_or_build(const mir_function& fn_mir, llvm::Module* module);
 	llvm::FunctionType* get_llvm_fn_type(const mir_function& fn_mir);
 
 private:

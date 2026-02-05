@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <deque>
 
 #include <mir/mir_function.h>
 
@@ -18,6 +18,6 @@ struct mir_module_meta {
 
 struct mir_module {
 	std::string name; // typically the source file name without extension
-	std::vector<mir_function> functions;
+	std::deque<mir_function> functions;
 	mir_module_meta meta;
 };

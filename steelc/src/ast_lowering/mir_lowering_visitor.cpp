@@ -100,6 +100,10 @@ void mir_lowering_visitor::visit(std::shared_ptr<cast_expression> expr) {
 	result = cast_result;
 }
 void mir_lowering_visitor::visit(std::shared_ptr<function_call> func_call) {
+	if (!func_call->declaration) {
+		throw std::runtime_error("Function call declaration not resolved in MIR lowering");
+	}
+
 	// lower each argument
 	std::vector<mir_operand> arg_operands;
 	arg_operands.reserve(func_call->args.size());
@@ -108,19 +112,17 @@ void mir_lowering_visitor::visit(std::shared_ptr<function_call> func_call) {
 		arg_operands.push_back(arg_op);
 	}
 
-	std::vector<mir_type> generic_arg_types;
-	generic_arg_types.reserve(func_call->generic_args.size());
-	for (auto& gen_arg : func_call->generic_args) {
-		generic_arg_types.push_back(mir_type{ gen_arg });
+	// find function (lowered)
+	auto it = func_map.find(func_call->declaration.get());
+	if (it == func_map.end() || !it->second) {
+		throw std::runtime_error("Function call declaration not mapped to MIR function");
 	}
 
 	// build the call instruction
 	mir_operand call_result = builder.build_call(
-		func_call->declaration->parent_module->name_path(),
-		func_call->identifier,
-		generic_arg_types,
+		it->second,
 		arg_operands,
-		mir_type{ func_call->declaration->type() } // declaration type for function type not return type
+		"result"
 	);
 	result = call_result;
 }

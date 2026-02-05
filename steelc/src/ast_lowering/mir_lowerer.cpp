@@ -1,6 +1,7 @@
 #include "mir_lowerer.h"
 
 #include <memory>
+#include <algorithm>
 
 #include <ast/ast.h>
 #include <mir/mir_module.h>
@@ -11,6 +12,7 @@
 
 std::vector<mir_module> mir_lowerer::lower_all(const std::vector<std::shared_ptr<compilation_unit>>& units) {
 	lowered.clear();
+	func_map.clear();
 
 	// lower each unit
 	for (auto& unit : units) {
@@ -19,12 +21,19 @@ std::vector<mir_module> mir_lowerer::lower_all(const std::vector<std::shared_ptr
 	}
 
 	// lower instantiated generics
+	std::vector<std::shared_ptr<function_declaration>> inst_funcs;
 	std::shared_ptr<function_declaration> func;
 	while (ctx.inst_worklist.dequeue(func)) {
 		if (func->is_generic && !func->is_generic_instance) continue;
+		inst_funcs.push_back(func);
+	}
 
-		auto& mod = get_module(func->owning_unit.lock());
-		mod.functions.push_back(lower_func(func));
+	for (auto& inst_func : inst_funcs) {
+		auto& mod = get_module(inst_func->owning_unit.lock());
+		declare_func(inst_func, mod);
+	}
+	for (auto& inst_func : inst_funcs) {
+		define_func(inst_func);
 	}
 
 	// return lowered modules
@@ -49,33 +58,49 @@ mir_module& mir_lowerer::get_module(const std::shared_ptr<compilation_unit>& uni
 }
 
 void mir_lowerer::lower_functions(const std::vector<ast_ptr>& decls, mir_module& mm) {
+	std::vector<std::shared_ptr<function_declaration>> funcs;
+	collect_functions(decls, funcs);
+
+	for (auto& func : funcs) {
+		if (func->is_generic && !func->is_generic_instance) {
+			continue; // skip generic function templates
+		}
+		declare_func(func, mm);
+	}
+	for (auto& func : funcs) {
+		if (func->is_generic && !func->is_generic_instance) {
+			continue;
+		}
+		define_func(func);
+	}
+}
+void mir_lowerer::collect_functions(const std::vector<ast_ptr>& decls, std::vector<std::shared_ptr<function_declaration>>& out) {
 	for (auto& decl : decls) {
 		if (auto mod = ast_ptr_cast<module_declaration>(decl)) {
-			lower_functions(mod->declarations, mm);
+			collect_functions(mod->declarations, out);
 		}
 		else if (auto func = ast_ptr_cast<function_declaration>(decl)) {
-			if (func->is_generic && !func->is_generic_instance) {
-				continue; // skip generic function templates
-			}
-
-			mm.functions.push_back(lower_func(func));
+			out.push_back(func);
 		}
 	}
 }
 
-mir_function mir_lowerer::lower_func(std::shared_ptr<function_declaration> func) {
-	if (func->is_generic && !func->is_generic_instance) {
-		throw std::runtime_error("Cannot lower generic function templates");
-	}
-
-	mir_function mf;
+mir_function& mir_lowerer::declare_func(const std::shared_ptr<function_declaration>& func, mir_module& mm) {
+	mm.functions.emplace_back();
+	mir_function& mf = mm.functions.back();
+	func_map[func.get()] = &mf;
 
 	// naming
 	mf.name = func->identifier;
 	if (func->parent_module && !func->parent_module->is_global()) {
-		mf.scopes = std::move(func->parent_module->name_path());
+		mf.scopes = func->parent_module->name_path();
 	}
-	mf.flags |= MIR_FUNC_NO_MANGLE;
+	if (func->is_entry_point || std::any_of(func->attributes.begin(), func->attributes.end(), [](std::shared_ptr<attribute> attr) {
+		if (attr->name == "no_mangle") return true;
+		return false;
+	})) {
+		mf.flags |= MIR_FUNC_NO_MANGLE;
+	}
 
 	// generics
 	if (func->is_generic && func->is_generic_instance) {
@@ -91,23 +116,33 @@ mir_function mir_lowerer::lower_func(std::shared_ptr<function_declaration> func)
 	for (const auto& param : func->parameters) {
 		// create values for the parameters here to be used later
 		auto pval = mf.make_value({ param->type }, param->identifier);
-		mf.params.push_back(mir_function_param{ param->type, param->identifier, pval});
+		mf.params.push_back(mir_function_param{ param->type, param->identifier, pval });
 	}
 
 	if (func->is_abstract()) {
 		mf.flags |= MIR_FUNC_NO_BODY;
-		return mf; // no body to lower
+	}
+
+	return mf;
+}
+void mir_lowerer::define_func(const std::shared_ptr<function_declaration>& func) {
+	auto it = func_map.find(func.get());
+	if (it == func_map.end() || !it->second) {
+		throw std::runtime_error("Cannot define function: MIR declaration missing");
+	}
+
+	mir_function& mf = *it->second;
+	if (mf.flags & MIR_FUNC_NO_BODY) {
+		return;
 	}
 
 	// entry block
-	{
+	if (mf.blocks.empty()) {
 		mir_block entry_block{ "entry" };
 		mf.blocks.push_back(std::move(entry_block));
 	}
 
 	// body - use lowering visitor for statements
-	mir_lowering_visitor visitor(mf);
+	mir_lowering_visitor visitor(mf, func_map);
 	func->accept(visitor);
-
-	return mf;
 }

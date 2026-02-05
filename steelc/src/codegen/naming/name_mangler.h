@@ -15,7 +15,6 @@
 class name_mangler {
 public:
 	std::string mangle_function(const mir_function& fn_mir);
-	std::string mangle_function(const mir_func_ref& fn_ref_mir);
 
 private:
 	std::string mangle_function(const std::string& name, const std::vector<std::string>& scopes, const std::vector<mir_type>& generic_args, const std::vector<mir_type>& param_types);

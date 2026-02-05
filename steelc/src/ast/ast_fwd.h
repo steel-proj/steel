@@ -42,6 +42,8 @@ class literal;
 
 class generic_parameter;
 
+class attribute;
+
 using ast_ptr = std::shared_ptr<ast_node>;
 
 template<typename T>

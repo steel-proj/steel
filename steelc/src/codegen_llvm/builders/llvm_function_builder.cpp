@@ -14,7 +14,7 @@
 #include <ast/declarations/function_declaration.h>
 #include <ast/declarations/type_declaration.h>
 
-llvm::Function* llvm_function_builder::build(const mir_function& fn_mir, llvm::Module* module) {
+llvm::Function* llvm_function_builder::get_or_build(const mir_function& fn_mir, llvm::Module* module) {
 	auto linkage = llvm::Function::ExternalLinkage;
 	auto fn_type = get_llvm_fn_type(fn_mir);
 

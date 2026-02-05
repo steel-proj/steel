@@ -161,3 +161,6 @@ void ast_visitor::visit(std::shared_ptr<break_statement> brk_stmt) {
 void ast_visitor::visit(std::shared_ptr<generic_parameter> param) {
 
 }
+void ast_visitor::visit(std::shared_ptr<attribute> attrib) {
+
+}

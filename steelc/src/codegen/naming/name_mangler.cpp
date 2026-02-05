@@ -25,19 +25,6 @@ std::string name_mangler::mangle_function(const mir_function& fn_mir) {
 	}
 	return mangle_function(fn_mir.name, fn_mir.scopes, fn_mir.generic_args, param_types);
 }
-std::string name_mangler::mangle_function(const mir_func_ref& fn_ref_mir) {
-	const auto& fn_type = fn_ref_mir.type.ty->as_function();
-	if (!fn_type) {
-		throw codegen_exception("Attempted to mangle non-function type as function");
-	}
-
-	std::vector<mir_type> param_types;
-	for (const auto& pty : fn_type->get_parameter_types()) {
-		param_types.push_back(mir_type{ pty });
-	}
-
-	return mangle_function(fn_ref_mir.name, fn_ref_mir.scopes, fn_ref_mir.generic_args, param_types);
-}
 
 std::string name_mangler::mangle_function(const std::string& name, const std::vector<std::string>& scopes, const std::vector<mir_type>& generic_args, const std::vector<mir_type>& param_types) {
 	/*// no mangle for bare-bone functions

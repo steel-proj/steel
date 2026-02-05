@@ -161,6 +161,7 @@ enum error_code {
     ERR_INVALID_ENUM_MODIFIER,
     ERR_EXTERN_FUNCTION_CANT_HAVE_BODY,
     ERR_FUNCTION_MUST_HAVE_BODY,
+    ERR_ATTRIBUTE_EXPECTED,
 };
 
 enum warning_code {
@@ -337,6 +338,7 @@ struct error_catalog {
             {"S165", "Invalid enum modifier '%s'"},
             {"S166", "Function '%s' cannot have a body as it has been marked extern"},
             {"S167", "Function '%s' must have a body as it has not been marked extern"},
+            {"S168", "Attribute name expected"},
         };
         return errors[code - 1 /* -1 to avoid ERR_SUCCESS */];
     }
