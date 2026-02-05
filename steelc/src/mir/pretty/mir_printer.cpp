@@ -40,9 +40,11 @@ std::string mir_printer::print_function(const mir_function& func) {
 
 	std::string result = "func " + full_name + params + " {\n";
 
+	current_func = &func;
 	for (const auto& block : func.blocks) {
 		result += print_block(block);
 	}
+	current_func = nullptr;
 
 	result += "}\n\n";
 	return result;
@@ -145,10 +147,10 @@ std::string mir_printer::value_to_str(const mir_value& value) {
 	if (!value.valid()) {
 		return "<invalid>";
 	}
-	if (!value.get_name().empty()) {
-		return "%" + value.get_name(); // e.g. %var
+	if (current_func) {
+		return "%" + current_func->get_value_name(value); // e.g. %var
 	}
-	return "%" + std::to_string(value.get_id()); // e.g. %2
+	return "%" + std::to_string(value.get_id()); // fallback
 }
 std::string mir_printer::type_to_str(const mir_type& type) {
 	// for now since its just a wrapper

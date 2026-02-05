@@ -15,10 +15,9 @@ public:
 
 public:
 	mir_value() = default;
-	mir_value(id_type id, const mir_type& ty, const std::string& name = "")
-		: id(id), type(ty), name(name) {
+	mir_value(id_type id, const mir_type& ty)
+		: id(id), type(ty) {
 	}
-
 
 	inline bool valid() const {
 		return id != -1;
@@ -30,12 +29,8 @@ public:
 	inline mir_type get_type() const {
 		return type;
 	}
-	inline std::string get_name() const {
-		return name;
-	}
 
 private:
 	id_type id = -1;
 	mir_type type{};
-	std::string name; // for debugging
 };

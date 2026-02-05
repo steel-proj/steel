@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include <unordered_map>
 
 #include <mir/mir_fwd.h>
 #include <mir/mir_type.h>
@@ -34,7 +35,18 @@ public:
 	}
 
 	inline mir_value make_value(const mir_type& ty, const std::string& name = "") {
-		return mir_value(next_value_id++, ty, name);
+		return mir_value(next_value_id++, ty);
+	}
+
+	// for debugging and readability purposes
+	inline void assign_value_name(const mir_value& value, const std::string& name) {
+		value_names[value.get_id()] = name;
+	}
+	inline std::string get_value_name(const mir_value& value) const {
+		if (value_names.contains(value.get_id())) {
+			return value_names.at(value.get_id());
+		}
+		return std::to_string(value.get_id());
 	}
 
 	std::string name;
@@ -47,4 +59,5 @@ public:
 
 private:
 	uint32_t next_value_id = 0;
+	std::unordered_map<mir_value::id_type, std::string> value_names;
 };
