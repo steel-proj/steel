@@ -336,9 +336,6 @@ void name_resolver::visit(std::shared_ptr<function_call> func_call) {
 		// only try to resolve the callee, not the method
 		func_call->callee->accept(*this);
 	}
-	else if (func_call->identifier == "printf") {
-		// temporary - dont resolve printf calls
-	}
 	else {
 		// check if its a constructor call
 		lookup_result type = resolver.lookup(func_call->identifier);

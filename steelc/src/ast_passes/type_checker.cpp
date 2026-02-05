@@ -642,9 +642,6 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 		func_call->declaration_candidates = method_candidates;
 	}
 
-	// TEMPORARY
-	if (func_call->identifier == "printf") return;
-
 	if (!func_call->declaration_candidates.empty()) {
 		// check any candidates match arguments provided
 		std::vector<candidate_score> matches;
