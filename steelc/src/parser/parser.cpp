@@ -523,15 +523,7 @@ std::shared_ptr<return_statement> parser::parse_return_statement() {
 	// is conditional?
 	std::shared_ptr<expression> condition = nullptr;
 	if (match(TT_IF)) {
-		if (!match(TT_LPAREN)) {
-			ERROR_TOKEN(ERR_LPAREN_EXPECTED, peek());
-			return nullptr;
-		}
 		condition = parse_expression();
-		if (!match(TT_RPAREN)) {
-			ERROR_TOKEN(ERR_RPAREN_EXPECTED, peek());
-			return nullptr;
-		}
 	}
 
 	if (!match(TT_SEMICOLON)) {
