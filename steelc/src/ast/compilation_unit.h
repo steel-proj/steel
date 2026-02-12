@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include <ast/ast_fwd.h>
 #include <ast/ast_node.h>
 #include <symbolics/import_table.h>
 #include <stproj/source_file.h>
