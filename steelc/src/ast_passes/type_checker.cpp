@@ -81,6 +81,10 @@ void type_checker::visit(std::shared_ptr<variable_declaration> var) {
 				ERROR(ERR_CANNOT_INFER_TYPE_UNKNOWN_INIT, var->span, var->identifier.c_str());
 				return;
 			}
+			else if (init_type->is_null()) {
+				ERROR(ERR_CANNOT_INFER_TYPE_NULL_INIT, var->span, var->identifier.c_str());
+				return;
+			}
 			var->type = var->initializer->type();
 		}
 		else {
@@ -842,6 +846,13 @@ bool type_checker::is_valid_conversion(type_ptr from, type_ptr to, bool implicit
 	}
 	if (from->is_custom()) {
 		return is_valid_upcast(from, to, span);
+	}
+	else if (from->is_null() && to->is_pointer()) {
+		return true; // allow implicit null to pointer conversion
+	}
+	else if (from->is_integer() && to->is_integer()) {
+		return true; // allow implicit conversions between integers
+		// ^^ we can verify this better in the future
 	}
 	else if (from->is_primitive()) {
 		const auto& builtin_conversions = get_core_conversions(from->primitive);

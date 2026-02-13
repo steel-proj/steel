@@ -6,7 +6,11 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/BasicBlock.h>
 
+#include <mir/mir_fwd.h>
+#include <mir/mir_value.h>
 #include <codegen/icode_generator.h>
 #include <codegen/codegen_result.h>
 #include <codegen/codegen_info.h>
@@ -103,6 +107,7 @@ private:
 	llvm_type_converter ty_converter;
 	llvm_function_builder fn_builder;
 	llvm_expression_builder expression_builder;
+	std::unordered_map<const mir_block*, llvm::BasicBlock*> block_map;
 	std::unique_ptr<llvm_writer> writer = nullptr;
 	std::unique_ptr<llvm_native_writer> nwriter = nullptr;
 

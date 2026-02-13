@@ -1,5 +1,6 @@
 #include "mir_lowerer.h"
 
+#include <vector>
 #include <memory>
 #include <algorithm>
 
@@ -95,11 +96,15 @@ mir_function& mir_lowerer::declare_func(const std::shared_ptr<function_declarati
 	if (func->parent_module && !func->parent_module->is_global()) {
 		mf.scopes = func->parent_module->name_path();
 	}
-	if (func->is_entry_point || std::any_of(func->attributes.begin(), func->attributes.end(), [](std::shared_ptr<attribute> attr) {
-		if (attr->name == "no_mangle") return true;
-		return false;
-	})) {
+	if (func->is_entry_point) {
 		mf.flags |= MIR_FUNC_NO_MANGLE;
+	}
+
+	// attributes
+	for (const auto& attr : func->attributes) {
+		if (attr->name == "no_mangle") {
+			mf.flags |= MIR_FUNC_NO_MANGLE;
+		}
 	}
 
 	// generics
@@ -138,8 +143,7 @@ void mir_lowerer::define_func(const std::shared_ptr<function_declaration>& func)
 
 	// entry block
 	if (mf.blocks.empty()) {
-		mir_block entry_block{ "entry" };
-		mf.blocks.push_back(std::move(entry_block));
+		mf.create_block("entry");
 	}
 
 	// body - use lowering visitor for statements

@@ -138,6 +138,9 @@ std::string mir_printer::operand_to_str(const mir_operand& operand) {
 			result += arg.function->name;
 			return "func(" + result + ")";
 		}
+		else if constexpr (std::is_same_v<T, mir_nullptr>) {
+			return "null";
+		}
 		else if constexpr (std::is_same_v<T, mir_field_ref>) {
 			return "field(" + std::to_string(arg.index) + ")";
 		}

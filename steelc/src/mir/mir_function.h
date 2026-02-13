@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <deque>
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
@@ -9,6 +10,7 @@
 #include <mir/mir_type.h>
 #include <mir/mir_value.h>
 #include <mir/mir_block.h>
+#include <sys/calling_convention.h>
 
 struct mir_function_param {
 	mir_type type;
@@ -23,7 +25,7 @@ enum mir_function_flag : uint32_t {
 	MIR_FUNC_NO_BODY = 1 << 1,
 };
 
-class mir_function{
+class mir_function {
 public:
 	mir_function() = default;
 
@@ -36,6 +38,10 @@ public:
 
 	inline mir_value make_value(const mir_type& ty, const std::string& name = "") {
 		return mir_value(next_value_id++, ty);
+	}
+	inline mir_block* create_block(const std::string& name = "") {
+		blocks.push_back(mir_block(name));
+		return &blocks.back();
 	}
 
 	// for debugging and readability purposes
@@ -54,8 +60,9 @@ public:
 	mir_type return_type;
 	std::vector<mir_type> generic_args;
 	std::vector<mir_function_param> params;
-	std::vector<mir_block> blocks;
+	std::deque<mir_block> blocks;
 	mir_function_flags flags = MIR_FUNC_NONE;
+	calling_convention call_conv = calling_convention::CDECL;
 
 private:
 	uint32_t next_value_id = 0;

@@ -55,10 +55,22 @@ codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codege
 
 llvm::Function* llvm_code_generator::emit_function(const mir_function& fn_mir) {
 	current_ssa.values.clear(); // reset SSA values
+	block_map.clear(); // reset blocks
+
 	llvm::Function* fn_llvm = fn_builder.get_or_build(fn_mir, module.get());
 	current_func = fn_llvm;
 
 	if (!(fn_mir.flags & MIR_FUNC_NO_BODY)) {
+		// pre-create all blocks for forward references
+		for (const auto& block : fn_mir.blocks) {
+			llvm::BasicBlock* bb = llvm::BasicBlock::Create(
+				context,
+				block.name,
+				fn_llvm
+			);
+			block_map[&block] = bb;
+		}
+
 		// map parameter values -> llvm values
 		unsigned param_index = 0;
 		for (const auto& param : fn_mir.params) {
@@ -66,6 +78,7 @@ llvm::Function* llvm_code_generator::emit_function(const mir_function& fn_mir) {
 			current_ssa.set(param.value.get_id(), llvm_arg);
 		}
 
+		// emit block bodies
 		for (const auto& block : fn_mir.blocks) {
 			emit_block(block);
 		}
@@ -79,11 +92,15 @@ llvm::BasicBlock* llvm_code_generator::emit_block(const mir_block& block_mir) {
 		throw codegen_exception("Cannot emit block outside of function");
 	}
 
-	llvm::BasicBlock* block_llvm = llvm::BasicBlock::Create(
-		/* Context */ context,
-		/* Name */ block_mir.name,
-		/* Parent Function */ current_func
-	);
+	llvm::BasicBlock* block_llvm = block_map[&block_mir];
+	if (!block_llvm) {
+		// fallback (create block now)
+		block_llvm = llvm::BasicBlock::Create(
+			/* context */ context,
+			/* name */ block_mir.name,
+			/* function */ current_func
+		);
+	}
 	builder.SetInsertPoint(block_llvm);
 
 	for (const auto& instr : block_mir.get_instrs()) {
@@ -291,6 +308,24 @@ void llvm_code_generator::emit_instr(const mir_instr& instr_mir) {
 
 		break;
 	}
+	
+	// BRANCHING
+	case mir_instr_opcode::BRA: {
+		auto* block = lower_operand(instr_mir.operands[0]);
+		builder.CreateBr(llvm::dyn_cast<llvm::BasicBlock>(block));
+		break;
+	}
+	case mir_instr_opcode::BRA_CND: {
+		auto* condition = lower_operand(instr_mir.operands[0]);
+		auto* true_block = llvm::dyn_cast<llvm::BasicBlock>(lower_operand(instr_mir.operands[1]));
+		auto* false_block = lower_operand(instr_mir.operands[2]);
+		if (!false_block) {
+			builder.CreateCondBr(condition, true_block, nullptr);
+			break;
+		}
+		builder.CreateCondBr(condition, true_block, llvm::dyn_cast<llvm::BasicBlock>(false_block));
+		break;
+	}
 
 	default:
 		throw codegen_exception("Unimplemented MIR instruction opcode in LLVM code generator");
@@ -333,6 +368,11 @@ llvm::Value* llvm_code_generator::lower_operand(const mir_operand& op_mir) {
 		else if constexpr (std::is_same_v<T, mir_string_imm>) {
 			return builder.CreateGlobalStringPtr(arg.value);
 		}
+		else if constexpr (std::is_same_v<T, mir_nullptr>) {
+			return llvm::ConstantPointerNull::get(
+				llvm::PointerType::getUnqual(context)
+			); // ^^ opaque nullptr
+		}
 		else if constexpr (std::is_same_v<T, mir_func_ref>) {
 			if (!arg.function) {
 				throw codegen_exception("Function reference is null");
@@ -343,6 +383,9 @@ llvm::Value* llvm_code_generator::lower_operand(const mir_operand& op_mir) {
 			// handle field reference
 			// (not implemented yet)
 			return nullptr;
+		}
+		else if constexpr (std::is_same_v<T, mir_block_ref>) {
+			return block_map[arg.block];
 		}
 		else {
 			static_assert(always_false<T>::value, "Non-exhaustive visitor in llvm_code_generator::lower_operand");

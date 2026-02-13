@@ -30,7 +30,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<variable_declaration> var) {
 void mir_lowering_visitor::visit(std::shared_ptr<function_declaration> func) {
 	// set the builder to the function's entry block
 	if (current_func.blocks.empty()) {
-		current_func.blocks.push_back(mir_block{ "entry" });
+		current_func.create_block("entry");
 	}
 	builder.set_function(&current_func);
 	builder.set_insert_block(current_func.get_entry_block());
@@ -160,6 +160,9 @@ void mir_lowering_visitor::visit(std::shared_ptr<literal> literal) {
 			mir_type{ ty }
 		);
 	}
+	else if (ty->is_null()) {
+		result = builder.build_const_nullptr();
+	}
 	else {
 		throw std::runtime_error("Unsupported literal type in MIR lowering");
 	}
@@ -175,6 +178,41 @@ void mir_lowering_visitor::visit(std::shared_ptr<code_block> block) {
 	if (!block->is_body) {
 		pop_scope();
 	}
+}
+void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
+	// lower the condition
+	mir_operand cond_op = accept(if_stmt->condition);
+
+	// then, else and merge blocks
+	mir_block* then_block = current_func.create_block("if_then");
+	mir_block* merge_block = current_func.create_block("if_merge");
+
+	mir_block* else_block = nullptr;
+	if (if_stmt->else_node) {
+		else_block = current_func.create_block("if_else");
+	}
+
+	// create branch
+	builder.build_cond_branch(
+		cond_op,
+		then_block,
+		else_block
+	);
+
+	// lower then block
+	builder.set_insert_block(then_block);
+	if_stmt->then_block->accept(*this);
+	builder.build_branch(merge_block);
+
+	// lower else block (if applicable)
+	if (if_stmt->else_node) {
+		builder.set_insert_block(else_block);
+		if_stmt->else_node->accept(*this);
+		builder.build_branch(merge_block);
+	}
+
+	// continue building in merge block
+	builder.set_insert_block(merge_block);
 }
 void mir_lowering_visitor::visit(std::shared_ptr<return_statement> ret_stmt) {
 	// lower the return expression

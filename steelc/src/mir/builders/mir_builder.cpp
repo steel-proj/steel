@@ -7,6 +7,8 @@
 #include <mir/mir_block.h>
 #include <mir/mir_function.h>
 #include <mir/mir_value.h>
+#include <mir/mir_instr.h>
+#include <mir/mir_operand.h>
 
 void mir_builder::build_ret_void() {
 	insert_instr({
@@ -59,22 +61,44 @@ mir_value mir_builder::build_binary_op(mir_instr_opcode opcode, mir_operand lhs,
 }
 
 mir_operand mir_builder::build_const_int(int64_t value, mir_type type) {
-	return mir_const_int{
+	return mir_const_int {
 		.type = type,
 		.value = value
 	};
 }
 mir_operand mir_builder::build_const_float(double value, mir_type type) {
-	return mir_const_float{
+	return mir_const_float {
 		.type = type,
 		.value = value
 	};
 }
 mir_operand mir_builder::build_const_string(const std::string& value, mir_type type) {
-	return mir_string_imm{
+	return mir_string_imm {
 		.type = type,
 		.value = value
 	};
+}
+mir_operand mir_builder::build_const_nullptr() {
+	return mir_nullptr{};
+}
+
+void mir_builder::build_branch(mir_block* target) {
+	insert_instr({
+		.kind = mir_instr_opcode::BRA,
+		.operands = {
+			mir_block_ref{target}
+		}
+	});
+}
+void mir_builder::build_cond_branch(mir_operand condition, mir_block* true_block, mir_block* false_block) {
+	insert_instr({
+		.kind = mir_instr_opcode::BRA_CND,
+		.operands = {
+			condition,
+			mir_block_ref{true_block},
+			mir_block_ref{false_block}
+		}
+	});
 }
 
 mir_operand mir_builder::build_call(const mir_function* func, std::vector<mir_operand> args, const std::string& result_name) {

@@ -110,7 +110,7 @@ link_result coff_linker::link(const link_data& data) {
 	cb << "/SUBSYSTEM:CONSOLE";
 
 	// for now link in release using static crt
-	cb << "libcmt.lib" << "libvcruntime.lib" << "libucrt.lib" << "kernel32.lib";
+	cb << "libcmt.lib" << "libvcruntime.lib" << "libucrt.lib" << "kernel32.lib" << "user32.lib";
 
 	// suppress logo
 	cb << "/NOLOGO";

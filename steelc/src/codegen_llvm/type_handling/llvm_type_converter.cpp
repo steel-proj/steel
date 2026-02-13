@@ -41,8 +41,7 @@ llvm::Type* llvm_type_converter::convert(const mir_type& ty) {
 		//return llvm::ArrayType::get(element_type, arr->size);
 	}
 	else if (auto ptr = t->as_pointer()) {
-		auto base_type = convert(mir_type{ ptr->base_type });
-		return llvm::PointerType::getUnqual(base_type);
+		return llvm::PointerType::getUnqual(context);
 	}
 	else if (auto fn = t->as_function()) {
 		std::vector<llvm::Type*> param_types;
@@ -65,6 +64,14 @@ llvm::Type* llvm_type_converter::get_primitive_type(const mir_type& ty) {
 			return llvm::Type::getInt32Ty(context);
 		case DT_I64:
 			return llvm::Type::getInt64Ty(context);
+		case DT_U16:
+			return llvm::Type::getInt16Ty(context);
+		case DT_U32:
+			return llvm::Type::getInt32Ty(context);
+		case DT_U64:
+			return llvm::Type::getInt64Ty(context);
+			// ^^ unsigned and signed integers are represented
+			// the same in LLVM
 		case DT_FLOAT:
 			return llvm::Type::getFloatTy(context);
 		case DT_DOUBLE:

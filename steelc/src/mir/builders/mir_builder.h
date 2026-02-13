@@ -41,6 +41,11 @@ public:
 	mir_operand build_const_int(int64_t value, mir_type type);
 	mir_operand build_const_float(double value, mir_type type);
 	mir_operand build_const_string(const std::string& value, mir_type type);
+	mir_operand build_const_nullptr();
+
+	// control flow
+	void build_branch(mir_block* target);
+	void build_cond_branch(mir_operand condition, mir_block* true_block, mir_block* false_block = nullptr);
 
 	// functions
 	mir_operand build_call(const mir_function* func, std::vector<mir_operand> args, const std::string& result_name = "");
