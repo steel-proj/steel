@@ -111,8 +111,10 @@ void init_checker::visit(std::shared_ptr<if_statement> if_stmt) {
 }
 void init_checker::visit(std::shared_ptr<for_loop> for_loop) {
 	// may never run, assume initializations could never occur
-	for_loop->initializer->accept(*this);
-	for_loop->condition->accept(*this);
+	if (for_loop->initializer)
+		for_loop->initializer->accept(*this);
+	if (for_loop->condition)
+		for_loop->condition->accept(*this);
 
 	auto before = initialized;
 	auto block = std::dynamic_pointer_cast<code_block>(for_loop->body);
