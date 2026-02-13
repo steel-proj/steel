@@ -38,6 +38,7 @@ target_sources(steelc_core PRIVATE
     "ast/expressions/this_expression.h"
     "ast/expressions/unary_expression.h"
     "ast/generics/generic_parameter.h"
+    "ast/metadata/attribute.h"
     "ast/statements/code_block.h"
     "ast/statements/import_statement.h"
     "ast/statements/inline_if.h"
@@ -278,6 +279,7 @@ target_sources(steelc_core PRIVATE
     "symbolics/type_symbols.h"
 
     # sys/
+    "sys/calling_convention.h"
     "sys/host_defs.h"
     "sys/platform.cpp"
     "sys/platform.h"
@@ -297,7 +299,7 @@ target_sources(steelc_core PRIVATE
     "utils/path_utils.h"
     "utils/string_utils.h"
     "utils/string_utils.cpp"
- "ast/metadata/attribute.h")
+)
 
 target_include_directories(steelc_core
 PUBLIC
