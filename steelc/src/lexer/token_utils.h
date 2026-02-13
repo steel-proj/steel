@@ -28,6 +28,7 @@ const std::map<char, token_type>& get_grammars();
 const std::map<std::string, token_type>& get_keywords();
 
 int precedence_of(token_type tk);
+bool is_assignment(token_type tk);
 
 bool is_integer_literal(const std::string& value);
 bool is_float_literal(const std::string& value);

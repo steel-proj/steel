@@ -65,6 +65,9 @@ const std::map<std::string, token_type>& get_keywords() {
 		{"short", TT_I16},
 		{"int", TT_I32},
 		{"long", TT_I64},
+		{"ushort", TT_U16},
+		{"uint", TT_U32},
+		{"ulong", TT_U64},
 		{"float", TT_FLOAT},
 		{"double", TT_DOUBLE},
 		{"char", TT_CHAR},
@@ -106,15 +109,20 @@ const std::vector<std::pair<std::string, token_type>>& get_operators() {
 		{"!=", TT_NOT_EQUAL},
 		{"<=", TT_LESS_EQ},
 		{">=", TT_GREATER_EQ},
+		{"+=", TT_ADD_ASSIGN},
+		{"-=", TT_SUBTRACT_ASSIGN},
+		{"*=", TT_MULTIPLY_ASSIGN},
+		{"/=", TT_DIVIDE_ASSIGN},
+		{"%=", TT_MODULO_ASSIGN},
 		{"::", TT_SCOPE},
 		{"->", TT_ARROW},
 		{"<", TT_LESS},
 		{">", TT_GREATER},
-		{"%", TT_MODULO},
 		{"+", TT_ADD},
 		{"-", TT_SUBTRACT},
 		{"*", TT_MULTIPLY},
 		{"/", TT_DIVIDE},
+		{"%", TT_MODULO},
 		{"=", TT_ASSIGN},
 		{"!", TT_NOT},
 		{".", TT_ACCESS},
@@ -184,12 +192,26 @@ int precedence_of(token_type tk) {
 		{TT_AND, 3},
 		{TT_OR, 2},
 		{TT_ASSIGN, 1},
+		{TT_ADD_ASSIGN, 1},
+		{TT_SUBTRACT_ASSIGN, 1},
+		{TT_MULTIPLY_ASSIGN, 1},
+		{TT_DIVIDE_ASSIGN, 1},
+		{TT_MODULO_ASSIGN, 1},
 	};
 	auto it = precedence_map.find(tk);
 	if (it != precedence_map.end()) {
 		return it->second;
 	}
 	return 0;
+}
+bool is_assignment(token_type tk) {
+	return
+		tk == TT_ASSIGN ||
+		tk == TT_ADD_ASSIGN ||
+		tk == TT_SUBTRACT_ASSIGN ||
+		tk == TT_MULTIPLY_ASSIGN ||
+		tk == TT_DIVIDE_ASSIGN ||
+		tk == TT_MODULO_ASSIGN;
 }
 
 bool is_integer_literal(const std::string& value) {
