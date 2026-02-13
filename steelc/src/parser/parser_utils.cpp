@@ -17,6 +17,15 @@ data_type_kind to_primitive(token_type tt) {
 	case TT_I64:
 		dt = DT_I64;
 		break;
+	case TT_U16:
+		dt = DT_U16;
+		break;
+	case TT_U32:
+		dt = DT_U32;
+		break;
+	case TT_U64:
+		dt = DT_U64;
+		break;
 	case TT_FLOAT:
 		dt = DT_FLOAT;
 		break;

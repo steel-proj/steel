@@ -590,7 +590,7 @@ std::shared_ptr<expression> parser::parse_binary_expression(int precedence) {
 			break; // no more operators with higher precedence
 		}
 
-		bool right_associative = op.type == TT_ASSIGN;
+		bool right_associative = is_assignment(op.type);
 
 		advance(); // consume the operator
 
@@ -598,11 +598,27 @@ std::shared_ptr<expression> parser::parse_binary_expression(int precedence) {
 		int next_precedence = right_associative ? op_precedence : op_precedence + 1;
 		std::shared_ptr<expression> right = std::dynamic_pointer_cast<expression>(parse_binary_expression(next_precedence));
 
-		if (op.type == TT_ASSIGN) {
-			left = make_ast<assignment_expression>(expr_token, left, right);
+		if (is_assignment(op.type)) {
+			if (op.type == TT_ASSIGN) {
+				left = make_ast<assignment_expression>(op, left, right);
+			}
+			else {
+				auto left_value = std::dynamic_pointer_cast<expression>(left->clone());
+				token_type bin_op = TT_UNKNOWN;
+				switch (op.type) {
+				case TT_ADD_ASSIGN:      bin_op = TT_ADD; break;
+				case TT_SUBTRACT_ASSIGN: bin_op = TT_SUBTRACT; break;
+				case TT_MULTIPLY_ASSIGN: bin_op = TT_MULTIPLY; break;
+				case TT_DIVIDE_ASSIGN:   bin_op = TT_DIVIDE; break;
+				case TT_MODULO_ASSIGN:   bin_op = TT_MODULO; break;
+				default: break;
+				}
+				auto rhs = make_ast<binary_expression>(op, left_value, right, bin_op);
+				left = make_ast<assignment_expression>(op, left, rhs);
+			}
 		}
 		else {
-			left = make_ast<binary_expression>(expr_token, left, right, op.type);
+			left = make_ast<binary_expression>(op, left, right, op.type);
 		}
 	}
 	return left;
@@ -697,6 +713,11 @@ std::shared_ptr<expression> parser::parse_primary_expression() {
 	else if (match(2, TT_TRUE, TT_FALSE)) {
 		token& literal_token = previous();
 		expr = make_ast<literal>(literal_token, DT_BOOL, literal_token.value);
+	}
+	else if (match(TT_NULL)) {
+		token& literal_token = previous();
+		expr = make_ast<literal>(literal_token, DT_NULL, "null");
+		// ^^ generic pointer
 	}
 	else if (match(TT_THIS)) {
 		expr = make_ast<this_expression>(previous());
@@ -1006,7 +1027,7 @@ token& parser::consume() {
 	return tokens[current++];
 }
 bool parser::match_primitive() {
-	if (match(10, TT_I16, TT_I32, TT_I64, TT_FLOAT, TT_DOUBLE, TT_CHAR, TT_STRING, TT_BYTE, TT_BOOL, TT_VOID)) {
+	if (match(13, TT_I16, TT_I32, TT_I64, TT_U16, TT_U32, TT_U64, TT_FLOAT, TT_DOUBLE, TT_CHAR, TT_STRING, TT_BYTE, TT_BOOL, TT_VOID)) {
 		return true;
 	}
 	return false;
