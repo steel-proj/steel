@@ -17,6 +17,9 @@ enum data_type_kind {
 	DT_I16,
 	DT_I32,
 	DT_I64,
+	DT_U16,
+	DT_U32,
+	DT_U64,
 	DT_FLOAT,
 	DT_DOUBLE,
 	DT_CHAR,
@@ -26,6 +29,7 @@ enum data_type_kind {
 	DT_BYTE,
 	DT_BOOL,
 	DT_VOID,
+	DT_NULL,
 
 	DT_ARRAY,
 	DT_POINTER,
@@ -51,6 +55,7 @@ public:
 	static type_ptr get(data_type_kind primitive);
 
 	static type_ptr UNKNOWN;
+	static type_ptr NULL_TYPE;
 
 	virtual bool operator==(const type_ptr& other) const;
 	bool operator!=(const type_ptr& other) const;
@@ -63,7 +68,8 @@ public:
 	}
 	// i16, i32, i64 (unsigned types are not supported yet)
 	inline bool is_integer() const {
-		return primitive == DT_I16 || primitive == DT_I32 || primitive == DT_I64;
+		return primitive == DT_I16 || primitive == DT_I32 || primitive == DT_I64
+			|| primitive == DT_U16 || primitive == DT_U32 || primitive == DT_U64;
 	}
 	// integer, enum, char, bool
 	inline bool is_integral() const {
@@ -87,6 +93,9 @@ public:
 	}
 	inline bool is_bool() const {
 		return primitive == DT_BOOL;
+	}
+	inline bool is_null() const {
+		return primitive == DT_NULL;
 	}
 
 	inline bool is_custom() const {

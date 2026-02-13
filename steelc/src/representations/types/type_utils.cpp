@@ -80,9 +80,12 @@ bool derives_from(type_ptr type, type_ptr base) {
 
 std::string to_string(data_type_kind primitive) {
 	switch (primitive) {
-	case DT_I16: return "small";
+	case DT_I16: return "short";
 	case DT_I32: return "int";
-	case DT_I64: return "large";
+	case DT_I64: return "long";
+	case DT_U16: return "ushort";
+	case DT_U32: return "uint";
+	case DT_U64: return "ulong";
 	case DT_FLOAT: return "float";
 	case DT_DOUBLE: return "double";
 	case DT_CHAR: return "char";
