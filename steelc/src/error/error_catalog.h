@@ -162,6 +162,7 @@ enum error_code {
     ERR_EXTERN_FUNCTION_CANT_HAVE_BODY,
     ERR_FUNCTION_MUST_HAVE_BODY,
     ERR_ATTRIBUTE_EXPECTED,
+    ERR_CANNOT_INFER_TYPE_NULL_INIT,
 };
 
 enum warning_code {
@@ -339,6 +340,7 @@ struct error_catalog {
             {"S166", "Function '%s' cannot have a body as it has been marked extern"},
             {"S167", "Function '%s' must have a body as it has not been marked extern"},
             {"S168", "Attribute name expected"},
+            {"S169", "Cannot infer type from null"},
         };
         return errors[code - 1 /* -1 to avoid ERR_SUCCESS */];
     }
