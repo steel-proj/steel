@@ -289,6 +289,8 @@ target_sources(steelc_core PRIVATE
     "sys/target_triple.h"
 
     # utils/
+    "utils/assert.cpp"
+    "utils/assert.h"
     "utils/command_builder.cpp"
     "utils/command_builder.h"
     "utils/console_colors.cpp"
