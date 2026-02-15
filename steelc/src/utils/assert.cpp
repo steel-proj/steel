@@ -13,11 +13,11 @@ void s_assert_fail_base(
 	std::string_view message
 ) {
 	// print message + debug info
-	output::err("Assertion failed: {}", console_colors::RED, expr_str);
-	output::err("Location: {}:{} in function {}", console_colors::RED, file, line, func);
+	output::err("Assertion failed: {}\n", console_colors::RED, expr_str);
+	output::err("Location: {}:{} in function {}\n", console_colors::RED, file, line, func);
 
 	if (!message.empty()) {
-		output::err("Message: {}", console_colors::RED, message);
+		output::err("Message: {}\n", console_colors::RED, message);
 	}
 
 	// abort the program
