@@ -10,6 +10,7 @@
 #include <mir/mir_operand.h>
 #include <representations/entities/entity.h>
 #include <representations/entities/module_entity.h>
+#include <utils/assert.h>
 
 void mir_lowering_visitor::visit(std::shared_ptr<variable_declaration> var) {
 	// create a local mir_value for the variable
@@ -185,30 +186,33 @@ void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
 
 	// then, else and merge blocks
 	mir_block* then_block = &current_func.add_block("if_then");
-	mir_block* merge_block = &current_func.add_block("if_merge");
-
-	mir_block* else_block = merge_block;
+	mir_block* else_block = nullptr;
 	if (if_stmt->else_node) {
 		else_block = &current_func.add_block("if_else");
 	}
+	mir_block* merge_block = &current_func.add_block("if_merge");
 
 	// create branch
 	builder.build_cond_branch(
 		cond_op,
 		then_block,
-		else_block
+		else_block ? else_block : merge_block
 	);
 
 	// lower then block
 	builder.set_insert_block(then_block);
 	if_stmt->then_block->accept(*this);
-	builder.build_branch(merge_block);
+	if (!then_block->get_terminator()) {
+		builder.build_branch(merge_block);
+	}
 
 	// lower else block (if applicable)
-	if (if_stmt->else_node) {
+	if (else_block) {
 		builder.set_insert_block(else_block);
 		if_stmt->else_node->accept(*this);
-		builder.build_branch(merge_block);
+		if (!else_block->get_terminator()) {
+			builder.build_branch(merge_block);
+		}
 	}
 
 	// continue building in merge block
