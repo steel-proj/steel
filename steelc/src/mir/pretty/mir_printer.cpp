@@ -144,6 +144,12 @@ std::string mir_printer::operand_to_str(const mir_operand& operand) {
 		else if constexpr (std::is_same_v<T, mir_field_ref>) {
 			return "field(" + std::to_string(arg.index) + ")";
 		}
+		else if constexpr (std::is_same_v<T, mir_block_ref>) {
+			if (arg.block_index <= -1) {
+				return "none";
+			}
+			return "block(" + std::to_string(arg.block_index) + ")";
+		}
 		else {
 			return "unknown_operand";
 		}
