@@ -184,7 +184,9 @@ target_sources(steelc_core PRIVATE
     "linking/sys/system_linker.h"
 
     # mir/
+    "mir/mir_block.cpp"
     "mir/mir_block.h"
+    "mir/mir_function.cpp"
     "mir/mir_function.h"
     "mir/mir_fwd.h"
     "mir/mir_instr.h"
