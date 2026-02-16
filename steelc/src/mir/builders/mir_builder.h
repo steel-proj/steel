@@ -58,7 +58,6 @@ private:
 	mir_block* ins_block = nullptr;
 
 	void insert_instr(const mir_instr&& instr);
-	mir_value create_ssa_value(mir_type type, const std::string& name);
 
 	// helpers
 	bool check_type_match(mir_operand lhs, mir_operand rhs);

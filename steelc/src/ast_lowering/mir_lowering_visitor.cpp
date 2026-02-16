@@ -21,7 +21,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<variable_declaration> var) {
 	}
 	else {
 		// default value
-		value = current_func.make_value({ var->type }, var->identifier);
+		value = mir_value({ var->type }, var->identifier);
 	}
 
 	// store it in the current scope

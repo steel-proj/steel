@@ -148,6 +148,9 @@ std::string mir_printer::operand_to_str(const mir_operand& operand) {
 			if (arg.block_index <= -1) {
 				return "none";
 			}
+			if (current_func && arg.block_index < current_func->blocks.size()) {
+				return current_func->blocks[arg.block_index].name;
+			}
 			return "block(" + std::to_string(arg.block_index) + ")";
 		}
 		else {
@@ -159,10 +162,7 @@ std::string mir_printer::value_to_str(const mir_value& value) {
 	if (!value.valid()) {
 		return "<invalid>";
 	}
-	if (current_func) {
-		return "%" + current_func->get_value_name(value); // e.g. %var
-	}
-	return "%" + std::to_string(value.get_id()); // fallback
+	return "%" + value.get_name();
 }
 std::string mir_printer::type_to_str(const mir_type& type) {
 	// for now since its just a wrapper

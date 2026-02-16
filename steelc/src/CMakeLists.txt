@@ -193,6 +193,7 @@ target_sources(steelc_core PRIVATE
     "mir/mir_module.h"
     "mir/mir_operand.h"
     "mir/mir_type.h"
+    "mir/mir_value.cpp"
     "mir/mir_value.h"
     "mir/builders/mir_builder.cpp"
     "mir/builders/mir_builder.h"
@@ -211,7 +212,6 @@ target_sources(steelc_core PRIVATE
     "output/output.h"
 
     # parser/
-    
     "parser/modifier.h"
     "parser/parser.cpp"
     "parser/parser.h"

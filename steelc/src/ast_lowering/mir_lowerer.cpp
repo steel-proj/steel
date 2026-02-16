@@ -120,7 +120,7 @@ mir_function& mir_lowerer::declare_func(const std::shared_ptr<function_declarati
 	mf.params.reserve(func->parameters.size());
 	for (const auto& param : func->parameters) {
 		// create values for the parameters here to be used later
-		auto pval = mf.make_value({ param->type }, param->identifier);
+		auto pval = mir_value({ param->type }, param->identifier);
 		mf.params.push_back(mir_function_param{ param->type, param->identifier, pval });
 	}
 

@@ -75,7 +75,7 @@ mir_value mir_builder::build_binary_op(mir_instr_opcode opcode, mir_operand lhs,
 		"Failed to identify binary operation result type");
 
 	// both same - just use lhs
-	mir_value result = create_ssa_value(result_type, result_name);
+	mir_value result = mir_value(result_type, result_name);
 	insert_instr({
 		.kind = opcode,
 		.type = result_type,
@@ -142,7 +142,7 @@ mir_operand mir_builder::build_call(const mir_function* func, std::vector<mir_op
 	args.insert(args.begin(), mir_func_ref{ func });
 
 	// create call instruction
-	mir_value result = create_ssa_value(func->return_type, result_name);
+	mir_value result = mir_value(func->return_type, result_name);
 	insert_instr({
 		.kind = mir_instr_opcode::CALL,
 		.type = func->return_type,
@@ -154,7 +154,7 @@ mir_operand mir_builder::build_call(const mir_function* func, std::vector<mir_op
 
 mir_value mir_builder::build_cast(mir_operand value, mir_type target_type, const std::string& result_name) {
 	// shouldnt need to verify casting validity here - that should be done earlier
-	mir_value result = create_ssa_value(target_type, result_name);
+	mir_value result = mir_value(target_type, result_name);
 	insert_instr({
 		.kind = mir_instr_opcode::CAST,
 		.type = target_type,
@@ -171,12 +171,6 @@ void mir_builder::insert_instr(const mir_instr&& instr) {
 		"Cannot insert an instruction when insert block is null");
 
 	ins_block->push_instr(instr);
-}
-mir_value mir_builder::create_ssa_value(mir_type type, const std::string& name) {
-	s_assert(func != nullptr,
-		"Cannot create SSA value when function is null");
-
-	return func->make_value(type);
 }
 
 bool mir_builder::check_type_match(mir_operand lhs, mir_operand rhs) {

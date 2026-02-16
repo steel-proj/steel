@@ -31,13 +31,7 @@ public:
 
 	mir_block* get_entry_block();
 
-	mir_value make_value(const mir_type& ty, const std::string& name = "");
-
 	mir_block& add_block(const std::string& name = "");
-
-	// for debugging and readability purposes
-	void assign_value_name(const mir_value& value, const std::string& name);
-	std::string get_value_name(const mir_value& value) const;
 
 	std::string name;
 	std::vector<std::string> scopes;
@@ -49,6 +43,4 @@ public:
 	calling_convention call_conv = calling_convention::CDECL;
 
 private:
-	uint32_t next_value_id = 0;
-	std::unordered_map<mir_value::id_type, std::string> value_names;
 };
