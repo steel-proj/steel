@@ -30,7 +30,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<variable_declaration> var) {
 void mir_lowering_visitor::visit(std::shared_ptr<function_declaration> func) {
 	// set the builder to the function's entry block
 	if (current_func.blocks.empty()) {
-		current_func.create_block("entry");
+		current_func.add_block("entry");
 	}
 	builder.set_function(&current_func);
 	builder.set_insert_block(current_func.get_entry_block());
@@ -184,12 +184,12 @@ void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
 	mir_operand cond_op = accept(if_stmt->condition);
 
 	// then, else and merge blocks
-	mir_block* then_block = &current_func.create_block("if_then");
-	mir_block* merge_block = &current_func.create_block("if_merge");
+	mir_block* then_block = &current_func.add_block("if_then");
+	mir_block* merge_block = &current_func.add_block("if_merge");
 
 	mir_block* else_block = merge_block;
 	if (if_stmt->else_node) {
-		else_block = &current_func.create_block("if_else");
+		else_block = &current_func.add_block("if_else");
 	}
 
 	// create branch

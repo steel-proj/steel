@@ -29,31 +29,15 @@ class mir_function {
 public:
 	mir_function() = default;
 
-	inline mir_block* get_entry_block() {
-		if (blocks.empty()) {
-			return nullptr;
-		}
-		return &blocks[0];
-	}
+	mir_block* get_entry_block();
 
-	inline mir_value make_value(const mir_type& ty, const std::string& name = "") {
-		return mir_value(next_value_id++, ty);
-	}
-	inline mir_block& create_block(const std::string& name = "") {
-		blocks.push_back(mir_block(name, next_block_index++));
-		return blocks.back();
-	}
+	mir_value make_value(const mir_type& ty, const std::string& name = "");
+
+	mir_block& add_block(const std::string& name = "");
 
 	// for debugging and readability purposes
-	inline void assign_value_name(const mir_value& value, const std::string& name) {
-		value_names[value.get_id()] = name;
-	}
-	inline std::string get_value_name(const mir_value& value) const {
-		if (value_names.contains(value.get_id())) {
-			return value_names.at(value.get_id());
-		}
-		return std::to_string(value.get_id());
-	}
+	void assign_value_name(const mir_value& value, const std::string& name);
+	std::string get_value_name(const mir_value& value) const;
 
 	std::string name;
 	std::vector<std::string> scopes;
@@ -66,6 +50,5 @@ public:
 
 private:
 	uint32_t next_value_id = 0;
-	int32_t next_block_index = 0;
 	std::unordered_map<mir_value::id_type, std::string> value_names;
 };

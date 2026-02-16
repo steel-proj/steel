@@ -143,7 +143,7 @@ void mir_lowerer::define_func(const std::shared_ptr<function_declaration>& func)
 
 	// entry block
 	if (mf.blocks.empty()) {
-		mf.create_block("entry");
+		mf.add_block("entry");
 	}
 
 	// body - use lowering visitor for statements
