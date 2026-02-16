@@ -7,6 +7,8 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <codegen/codegen_result.h>
 #include <codegen/codegen_config.h>
@@ -21,6 +23,7 @@
 #include <mir/mir_function.h>
 #include <mir/mir_block.h>
 #include <mir/mir_instr.h>
+#include <mir/mir_operand.h>
 
 codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codegen_config& cfg) {
 	module = std::make_unique<llvm::Module>(mod_mir.name, context);
@@ -30,6 +33,9 @@ codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codege
 	for (const auto& fn : mod_mir.functions) {
 		emit_function(fn);
 	}
+
+	// verify generated module
+	verify_module();
 
 	codegen_result result;
 	// IR files (optional, but we produce them anyway)
@@ -54,21 +60,27 @@ codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codege
 }
 
 llvm::Function* llvm_code_generator::emit_function(const mir_function& fn_mir) {
+	current_func_mir = &fn_mir;
+
 	current_ssa.values.clear(); // reset SSA values
-	block_map.clear(); // reset blocks
+	current_blocks.clear(); // reset blocks
 
 	llvm::Function* fn_llvm = fn_builder.get_or_build(fn_mir, module.get());
 	current_func = fn_llvm;
 
 	if (!(fn_mir.flags & MIR_FUNC_NO_BODY)) {
 		// pre-create all blocks for forward references
+		// we need to store it in another vector since
+		// llvm stopped allowing direct indexing into the
+		// functions block list
+		current_blocks.reserve(fn_mir.blocks.size());
 		for (const auto& block : fn_mir.blocks) {
 			llvm::BasicBlock* bb = llvm::BasicBlock::Create(
 				context,
 				block.name,
 				fn_llvm
 			);
-			block_map[&block] = bb;
+			current_blocks.push_back(bb);
 		}
 
 		// map parameter values -> llvm values
@@ -84,6 +96,7 @@ llvm::Function* llvm_code_generator::emit_function(const mir_function& fn_mir) {
 		}
 	}
 
+	current_func_mir = nullptr;
 	current_func = nullptr;
 	return fn_llvm;
 }
@@ -92,7 +105,7 @@ llvm::BasicBlock* llvm_code_generator::emit_block(const mir_block& block_mir) {
 		throw codegen_exception("Cannot emit block outside of function");
 	}
 
-	llvm::BasicBlock* block_llvm = block_map[&block_mir];
+	llvm::BasicBlock* block_llvm = current_blocks[block_mir.index];
 	if (!block_llvm) {
 		// fallback (create block now)
 		block_llvm = llvm::BasicBlock::Create(
@@ -385,13 +398,29 @@ llvm::Value* llvm_code_generator::lower_operand(const mir_operand& op_mir) {
 			return nullptr;
 		}
 		else if constexpr (std::is_same_v<T, mir_block_ref>) {
-			return block_map[arg.block];
+			if (arg.block_index <= -1) {
+				return nullptr; // null block reference
+			}
+			else if (arg.block_index > current_blocks.size()) {
+				throw codegen_exception("Block reference out of range");
+			}
+			return current_blocks[arg.block_index];
 		}
 		else {
 			static_assert(always_false<T>::value, "Non-exhaustive visitor in llvm_code_generator::lower_operand");
 			return nullptr;
 		}
 	}, op_mir);
+}
+
+void llvm_code_generator::verify_module() {
+	std::string err_str;
+	llvm::raw_string_ostream err_stream(err_str);
+
+	if (llvm::verifyModule(*module, &err_stream)) {
+		err_stream.flush();
+		throw codegen_exception("Generated LLVM module is invalid: " + err_str);
+	}
 }
 
 code_artifact llvm_code_generator::generate_bitcode_artifact(const mir_module& mod_mir) {

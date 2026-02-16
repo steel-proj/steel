@@ -39,9 +39,9 @@ public:
 	inline mir_value make_value(const mir_type& ty, const std::string& name = "") {
 		return mir_value(next_value_id++, ty);
 	}
-	inline mir_block* create_block(const std::string& name = "") {
-		blocks.push_back(mir_block(name));
-		return &blocks.back();
+	inline mir_block& create_block(const std::string& name = "") {
+		blocks.push_back(mir_block(name, next_block_index++));
+		return blocks.back();
 	}
 
 	// for debugging and readability purposes
@@ -66,5 +66,6 @@ public:
 
 private:
 	uint32_t next_value_id = 0;
+	int32_t next_block_index = 0;
 	std::unordered_map<mir_value::id_type, std::string> value_names;
 };

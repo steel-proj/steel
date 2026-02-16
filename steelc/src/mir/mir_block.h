@@ -11,8 +11,8 @@
 
 class mir_block {
 public:
-	mir_block(const std::string& name)
-		: name(name) {
+	mir_block(const std::string& name, int index)
+		: name(name), index(index) {
 	}
 
 	inline void push_instr(const mir_instr& instr) {
@@ -23,6 +23,7 @@ public:
 	}
 
 	std::string name;
+	int index; // index within function
 
 private:
 	std::vector<mir_instr> instructions;

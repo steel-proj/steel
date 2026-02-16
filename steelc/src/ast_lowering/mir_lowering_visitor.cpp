@@ -184,12 +184,12 @@ void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
 	mir_operand cond_op = accept(if_stmt->condition);
 
 	// then, else and merge blocks
-	mir_block* then_block = current_func.create_block("if_then");
-	mir_block* merge_block = current_func.create_block("if_merge");
+	mir_block* then_block = &current_func.create_block("if_then");
+	mir_block* merge_block = &current_func.create_block("if_merge");
 
-	mir_block* else_block = nullptr;
+	mir_block* else_block = merge_block;
 	if (if_stmt->else_node) {
-		else_block = current_func.create_block("if_else");
+		else_block = &current_func.create_block("if_else");
 	}
 
 	// create branch

@@ -100,22 +100,27 @@ private:
 	std::unique_ptr<llvm::Module> module = nullptr;
 	llvm::IRBuilder<> builder;
 
+	const mir_function* current_func_mir = nullptr;
 	llvm::Function* current_func = nullptr;
+	std::vector<llvm::BasicBlock*> current_blocks;
 
 	ssa_scope current_ssa;
 	name_mangler mangler;
 	llvm_type_converter ty_converter;
 	llvm_function_builder fn_builder;
 	llvm_expression_builder expression_builder;
-	std::unordered_map<const mir_block*, llvm::BasicBlock*> block_map;
 	std::unique_ptr<llvm_writer> writer = nullptr;
 	std::unique_ptr<llvm_native_writer> nwriter = nullptr;
 
+	// emitters
 	llvm::Function* emit_function(const mir_function& fn_mir);
 	llvm::BasicBlock* emit_block(const mir_block& block_mir);
 	void emit_instr(const mir_instr& instr_mir);
 
+	// lowering
 	llvm::Value* lower_operand(const mir_operand& op_mir);
+
+	void verify_module();
 
 	// artifact generators
 	code_artifact generate_bitcode_artifact(const mir_module& mod_mir);
