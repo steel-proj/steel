@@ -32,3 +32,5 @@ struct mir_instr {
 	mir_value result{};
 	std::vector<mir_operand> operands;
 };
+
+bool is_terminator(const mir_instr& instr);

@@ -22,6 +22,8 @@ public:
 		return instructions;
 	}
 
+	const mir_instr* get_terminator() const;
+
 	std::string name;
 	int index; // index within function
 

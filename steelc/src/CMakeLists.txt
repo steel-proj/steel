@@ -189,6 +189,7 @@ target_sources(steelc_core PRIVATE
     "mir/mir_function.cpp"
     "mir/mir_function.h"
     "mir/mir_fwd.h"
+    "mir/mir_instr.cpp"
     "mir/mir_instr.h"
     "mir/mir_module.h"
     "mir/mir_operand.h"
