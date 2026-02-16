@@ -41,6 +41,4 @@ public:
 	std::deque<mir_block> blocks;
 	mir_function_flags flags = MIR_FUNC_NONE;
 	calling_convention call_conv = calling_convention::CDECL;
-
-private:
 };

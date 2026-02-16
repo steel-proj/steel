@@ -1,5 +1,9 @@
 #include "mir_function.h"
 
+#include <string>
+
+#include <mir/mir_block.h>
+
 mir_block* mir_function::get_entry_block() {
 	if (blocks.empty()) {
 		return nullptr;
