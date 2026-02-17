@@ -301,6 +301,8 @@ target_sources(steelc_core PRIVATE
     "utils/console_colors.h"
     "utils/iclonable.h"
     "utils/maybe.h"
+    "utils/name_path.cpp"
+    "utils/name_path.h"
     "utils/path_utils.cpp"
     "utils/path_utils.h"
     "utils/string_utils.h"
