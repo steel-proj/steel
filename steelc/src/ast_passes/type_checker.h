@@ -56,6 +56,8 @@ private:
 		int score = 0;
 	};
 
+	type_ptr resolve_expr_type(std::shared_ptr<expression> expr);
+
 	bool member_access_allowed(type_ptr type);
 	bool method_access_allowed(type_ptr type);
 	bool is_valid_conversion(type_ptr from, type_ptr to, bool implicit, code_span span);

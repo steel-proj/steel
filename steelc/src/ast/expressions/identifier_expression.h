@@ -34,6 +34,11 @@ public:
 	}
 
 	type_ptr type() const override {
+		if (auto ent = entity_ref.get(); ent && ent != entity::UNRESOLVED) {
+			if (ent->kind() == ENTITY_VARIABLE) {
+				return ent->as_variable()->var_type();
+			}
+		}
 		return data_type::UNKNOWN;
 	}
 	bool is_rvalue() const override {

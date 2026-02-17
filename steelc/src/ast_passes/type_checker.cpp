@@ -76,7 +76,7 @@ void type_checker::visit(std::shared_ptr<variable_declaration> var) {
 	// set variable type if UNKNOWN
 	if (var->type == data_type::UNKNOWN) {
 		if (var->has_initializer()) {
-			auto init_type = var->initializer->type();
+			auto init_type = resolve_expr_type(var->initializer);
 			if (init_type == data_type::UNKNOWN) {
 				ERROR(ERR_CANNOT_INFER_TYPE_UNKNOWN_INIT, var->span, var->identifier.c_str());
 				return;
@@ -85,7 +85,7 @@ void type_checker::visit(std::shared_ptr<variable_declaration> var) {
 				ERROR(ERR_CANNOT_INFER_TYPE_NULL_INIT, var->span, var->identifier.c_str());
 				return;
 			}
-			var->type = var->initializer->type();
+			var->type = resolve_expr_type(var->initializer);
 		}
 		else {
 			ERROR(ERR_CANNOT_INFER_TYPE_NO_INIT, var->span, var->identifier.c_str());
@@ -119,7 +119,7 @@ void type_checker::visit(std::shared_ptr<variable_declaration> var) {
 					}
 					else {
 						for (size_t i = 0; i < init_list->values.size(); i++) {
-							const auto& value_type = init_list->values[i]->type();
+							const auto& value_type = resolve_expr_type(init_list->values[i]);
 							const auto& field_type = custom->declaration->fields[i]->type;
 							if (*field_type != value_type) {
 								ERROR(ERR_TYPE_MISMATCH_INITIALIZER, init_list->values[i]->span, field_type->name().c_str(), value_type->name().c_str());
@@ -144,14 +144,14 @@ void type_checker::visit(std::shared_ptr<variable_declaration> var) {
 		// standard variable assignment
 		else {
 			auto& var_type = var->type;
-			auto init_type = var->initializer->type();
+			auto init_type = resolve_expr_type(var->initializer);
 			if (init_type == data_type::UNKNOWN) {
 				return; // might change this later
 				ERROR(ERR_CANNOT_INFER_TYPE_UNKNOWN_INIT, var->span, var->identifier.c_str());
 				return;
 			}
 			if (*var_type != init_type && !is_valid_conversion(init_type, var_type, true, var->initializer->span)) {
-				ERROR(ERR_TYPE_ASSIGNMENT_MISMATCH, var->span, var->type->name().c_str(), var->initializer->type()->name().c_str());
+				ERROR(ERR_TYPE_ASSIGNMENT_MISMATCH, var->span, var->type->name().c_str(), resolve_expr_type(var->initializer)->name().c_str());
 				return;
 			}
 		}
@@ -301,7 +301,7 @@ void type_checker::visit(std::shared_ptr<binary_expression> expr) {
 	}
 
 	if (left_entity == nullptr) {
-		lty = expr->left->type();
+		lty = resolve_expr_type(expr->left);
 		if (!lty) {
 			ERROR(ERR_INTERNAL_ERROR, expr->left->span, "Type Checker", "LHS of binary expression has no type or entity");
 			return;
@@ -315,7 +315,7 @@ void type_checker::visit(std::shared_ptr<binary_expression> expr) {
 	}
 
 	if (right_entity == nullptr) {
-		rty = expr->left->type();
+		rty = resolve_expr_type(expr->left);
 		if (!rty) {
 			ERROR(ERR_INTERNAL_ERROR, expr->left->span, "Type Checker", "RHS of binary expression has no type or entity");
 			return;
@@ -385,8 +385,8 @@ void type_checker::visit(std::shared_ptr<binary_expression> expr) {
 void type_checker::visit(std::shared_ptr<assignment_expression> expr) {
 	expr->left->accept(*this);
 	expr->right->accept(*this);
-	auto left_type = expr->left->type();
-	auto right_type = expr->right->type();
+	auto left_type = resolve_expr_type(expr->left);
+	auto right_type = resolve_expr_type(expr->right);
 
 	// cannot assign to a const variable
 	auto entity = expr->left->entity(*active_symbols);
@@ -424,14 +424,14 @@ void type_checker::visit(std::shared_ptr<address_of_expression> expr) {
 }
 void type_checker::visit(std::shared_ptr<deref_expression> expr) {
 	expr->value->accept(*this);
-	if (!expr->value->type()->is_pointer()) {
+	if (!resolve_expr_type(expr->value)->is_pointer()) {
 		ERROR(ERR_DEREFERENCE_OF_NON_POINTER, expr->span);
 		return;
 	}
 }
 void type_checker::visit(std::shared_ptr<unary_expression> expr) {
 	expr->operand->accept(*this);
-	auto operand_type = expr->operand->type();
+	auto operand_type = resolve_expr_type(expr->operand);
 	switch (expr->oparator) {
 	case TT_NOT:
 		if (!operand_type->is_primitive() || operand_type->primitive != DT_BOOL) {
@@ -464,12 +464,12 @@ void type_checker::visit(std::shared_ptr<identifier_expression> expr) {
 }
 void type_checker::visit(std::shared_ptr<index_expression> expr) {
 	expr->base->accept(*this);
-	if (!expr->base->type()->is_indexable()) {
+	if (!resolve_expr_type(expr->base)->is_indexable()) {
 		ERROR(ERR_BASE_NOT_INDEXABLE, expr->span);
 		return;
 	}
 	expr->indexer->accept(*this);
-	auto indexer_type = expr->indexer->type();
+	auto indexer_type = resolve_expr_type(expr->indexer);
 	if (!indexer_type->is_primitive() || !indexer_type->is_integral()) {
 		ERROR(ERR_INDEXER_NOT_INTEGER, expr->indexer->span);
 		return;
@@ -478,7 +478,7 @@ void type_checker::visit(std::shared_ptr<index_expression> expr) {
 void type_checker::visit(std::shared_ptr<cast_expression> expr) {
 	expr->expr->accept(*this);
 
-	auto from = expr->expr->type();
+	auto from = resolve_expr_type(expr->expr);
 	auto& to = expr->cast_type;
 
 	if (!is_valid_conversion(from, to, false, expr->span)) {
@@ -565,10 +565,10 @@ void type_checker::visit(std::shared_ptr<initializer_list> init) {
 		for (const auto& value : init->values) {
 			value->accept(*this);
 			if (type == data_type::UNKNOWN) {
-				type = value->type();
+				type = resolve_expr_type(value);
 			}
-			else if (*type != value->type()) {
-				ERROR(ERR_ARRAY_INITIALIZER_TYPE_MISMATCH, init->span, type->name().c_str(), value->type()->name().c_str());
+			else if (*type != resolve_expr_type(value)) {
+				ERROR(ERR_ARRAY_INITIALIZER_TYPE_MISMATCH, init->span, type->name().c_str(), resolve_expr_type(value)->name().c_str());
 				return;
 			}
 		}
@@ -585,7 +585,7 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 	std::vector<type_ptr> arg_types;
 	for (const auto& arg : func_call->args) {
 		arg->accept(*this);
-		arg_types.push_back(arg->type());
+		arg_types.push_back(resolve_expr_type(arg));
 	}
 	std::vector<type_ptr> generic_types;
 	for (const auto& gen : func_call->generic_args) {
@@ -625,7 +625,7 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 		// resolve the object
 		func_call->callee->accept(*this);
 
-		auto type = func_call->callee->type();
+		auto type = resolve_expr_type(func_call->callee);
 		if (!method_access_allowed(type)) {
 			// should change this error really as it could be composite with no members like a Foo** etc.
 			ERROR(ERR_METHOD_ACCESS_ON_NONCOMPOSITE, func_call->span, type->name().c_str());
@@ -691,7 +691,7 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 			// sort matches by score
 			std::sort(matches.begin(), matches.end(), [](const candidate_score& a, const candidate_score& b) {
 				return a.score > b.score;
-			});
+				});
 			// if top 2 scores are the same, we have an ambiguity error
 			if (matches.size() > 1 && matches[0].score == matches[1].score) {
 				if (func_call->is_constructor) {
@@ -726,13 +726,13 @@ void type_checker::visit(std::shared_ptr<if_statement> if_stmt) {
 		if_stmt->else_node->accept(*this);
 	}
 
-	auto cond_type = if_stmt->condition->type();
+	auto cond_type = resolve_expr_type(if_stmt->condition);
 	if (cond_type == data_type::UNKNOWN) {
 		// assume error has already been reported
 		return;
 	}
 
-	if (!if_stmt->condition->type()->is_primitive() || if_stmt->condition->type()->primitive != DT_BOOL) {
+	if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
 		ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, if_stmt->span);
 		return;
 	}
@@ -741,7 +741,8 @@ void type_checker::visit(std::shared_ptr<inline_if> inline_if) {
 	inline_if->condition->accept(*this);
 	inline_if->statement->accept(*this);
 
-	if (!inline_if->condition->type()->is_primitive() || inline_if->condition->type()->primitive != DT_BOOL) {
+	auto cond_type = resolve_expr_type(inline_if->condition);
+	if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
 		ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, inline_if->span);
 		return;
 	}
@@ -753,7 +754,8 @@ void type_checker::visit(std::shared_ptr<for_loop> for_loop) {
 	// condition should always be a boolean expression
 	if (for_loop->condition) {
 		for_loop->condition->accept(*this);
-		if (!for_loop->condition->type()->is_primitive() || for_loop->condition->type()->primitive != DT_BOOL) {
+		auto cond_type = resolve_expr_type(for_loop->condition);
+		if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
 			ERROR(ERR_FOR_CONDITION_NOT_BOOLEAN, for_loop->span);
 			return;
 		}
@@ -765,7 +767,8 @@ void type_checker::visit(std::shared_ptr<for_loop> for_loop) {
 }
 void type_checker::visit(std::shared_ptr<while_loop> while_loop) {
 	while_loop->condition->accept(*this);
-	if (!while_loop->condition->type()->is_primitive() || while_loop->condition->type()->primitive != DT_BOOL) {
+	auto cond_type = resolve_expr_type(while_loop->condition);
+	if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
 		ERROR(ERR_WHILE_CONDITION_NOT_BOOLEAN, while_loop->span);
 		return;
 	}
@@ -778,7 +781,7 @@ void type_checker::visit(std::shared_ptr<return_statement> ret) {
 
 	if (ret->is_conditional()) {
 		ret->condition->accept(*this);
-		auto cond_type = ret->condition->type();
+		auto cond_type = resolve_expr_type(ret->condition);
 		if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
 			ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, ret->span);
 			return;
@@ -808,7 +811,7 @@ void type_checker::visit(std::shared_ptr<return_statement> ret) {
 
 		ret->value->accept(*this);
 		// ensure types match
-		auto ret_type = ret->value->type();
+		auto ret_type = resolve_expr_type(ret->value);
 		if (ret_type == data_type::UNKNOWN) {
 			// assume error has already been reported
 			return;
@@ -825,6 +828,17 @@ void type_checker::visit(std::shared_ptr<return_statement> ret) {
 			return;
 		}
 	}
+}
+
+type_ptr type_checker::resolve_expr_type(std::shared_ptr<expression> expr) {
+	auto ent = expr->entity(*active_symbols);
+	if (ent == entity::UNRESOLVED) {
+		return data_type::UNKNOWN;
+	}
+	if (ent && ent->kind() == ENTITY_VARIABLE) {
+		return ent->as_variable()->var_type();
+	}
+	return expr->type();
 }
 
 bool type_checker::member_access_allowed(type_ptr type) {
@@ -971,7 +985,7 @@ void type_checker::check_type(type_ptr& type) {
 				return;
 			}
 
-			auto size_expr_type = arr->size_expression->type();
+			auto size_expr_type = resolve_expr_type(arr->size_expression);
 			if (!size_expr_type->is_integral()) {
 				ERROR(ERR_ARRAY_SIZE_MUST_BE_INTEGER, arr->size_expression->span);
 				return;
