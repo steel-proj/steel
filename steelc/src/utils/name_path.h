@@ -19,6 +19,10 @@ public:
 
 	std::string flatten(const std::string& sep = "::") const;
 
+	inline bool is_qualified() const {
+		return !scopes.empty();
+	}
+
 	std::vector<std::string> scopes; // outer to inner
 	std::string name; // unqualified name
 };
