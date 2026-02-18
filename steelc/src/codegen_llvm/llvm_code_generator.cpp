@@ -35,7 +35,7 @@ codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codege
 	}
 
 	// verify generated module
-	//verify_module();
+	verify_module();
 
 	codegen_result result;
 	// IR files (optional, but we produce them anyway)
@@ -50,11 +50,11 @@ codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codege
 	}
 
 	// native object file
-	/*code_artifact obj_artifact;
+	code_artifact obj_artifact;
 	if (generate_native_object_artifact(mod_mir, obj_artifact)) {
 		result.artifacts.push_back(obj_artifact);
 	}
-	else throw codegen_exception("Failed to generate native object: " + nwriter->get_error());*/
+	else throw codegen_exception("Failed to generate native object: " + nwriter->get_error());
 
 	return result;
 }

@@ -186,43 +186,47 @@ void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
 
 	// then, else and merge blocks
 	mir_block* then_block = current_func.add_block("if_then");
-	mir_block* else_block = nullptr;
+	std::unique_ptr<mir_block> else_block = nullptr;
 	if (if_stmt->else_node) {
-		else_block = current_func.add_block("if_else");
+		else_block = mir_block::create("if_else");
 	}
-	mir_block* merge_block = current_func.add_block("if_merge");
+	std::unique_ptr<mir_block> merge_block = mir_block::create("if_merge");
 
 	// create branch
 	builder.build_cond_branch(
 		cond_op,
 		then_block,
-		else_block ? else_block : merge_block
+		else_block ? else_block.get() : merge_block.get()
 	);
 
 	// lower then block
 	builder.set_insert_block(then_block);
 	if_stmt->then_block->accept(*this);
 	if (!then_block->get_terminator()) {
-		builder.build_branch(merge_block);
+		builder.build_branch(merge_block.get());
 	}
 
 	// lower else block (if applicable)
 	if (else_block) {
-		builder.set_insert_block(else_block);
+		builder.set_insert_block(else_block.get());
 		if_stmt->else_node->accept(*this);
 		if (!else_block->get_terminator()) {
-			builder.build_branch(merge_block);
+			builder.build_branch(merge_block.get());
 		}
+
+		// add to function
+		current_func.add_block(std::move(else_block));
 	}
 
-	// continue building in merge block
-	builder.set_insert_block(merge_block);
+	// add else + merge blocks and continue building
+	current_func.add_block(std::move(merge_block));
+	builder.set_insert_block(current_func.back());
 }
 void mir_lowering_visitor::visit(std::shared_ptr<for_loop> for_loop) {
 	mir_block* init_block = current_func.add_block("for_init");
 	mir_block* cond_block = current_func.add_block("for_condition");
 	mir_block* body_block = current_func.add_block("for_body");
-	mir_block* merge_block = current_func.add_block("for_merge");
+	std::unique_ptr<mir_block> merge_block = mir_block::create("for_merge");
 
 	// initial branch to initializer block
 	builder.build_branch(init_block);
@@ -241,7 +245,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<for_loop> for_loop) {
 		builder.build_cond_branch(
 			cond_op,
 			body_block,
-			merge_block
+			merge_block.get()
 		);
 	}
 	else {
@@ -255,18 +259,22 @@ void mir_lowering_visitor::visit(std::shared_ptr<for_loop> for_loop) {
 	if (for_loop->increment) {
 		for_loop->increment->accept(*this);
 	}
-	if (!body_block->get_terminator()) {
+	
+	// branch back to condition
+	mir_block* current_block = builder.get_insert_block();
+	if (current_block && !current_block->get_terminator()) {
 		builder.build_branch(cond_block);
 	}
 
 	// continue building in merge block
-	builder.set_insert_block(merge_block);
+	current_func.add_block(std::move(merge_block));
+	builder.set_insert_block(current_func.back());
 }
 void mir_lowering_visitor::visit(std::shared_ptr<while_loop> while_loop) {
 	// then, else and merge blocks
 	mir_block* cond_block = current_func.add_block("while_condition");
 	mir_block* body_block = current_func.add_block("while_body");
-	mir_block* merge_block = current_func.add_block("while_merge");
+	std::unique_ptr<mir_block> merge_block = mir_block::create("while_merge");
 
 	// initial branch to condition block
 	builder.build_branch(cond_block);
@@ -277,19 +285,22 @@ void mir_lowering_visitor::visit(std::shared_ptr<while_loop> while_loop) {
 	builder.build_cond_branch(
 		cond_op,
 		body_block,
-		merge_block
+		merge_block.get()
 	);
 
 	// lower body block
 	builder.set_insert_block(body_block);
 	while_loop->body->accept(*this);
-	if (!body_block->get_terminator()) {
+	
+	mir_block* current_block = builder.get_insert_block();
+	if (current_block && !current_block->get_terminator()) {
 		// branch back to condition
 		builder.build_branch(cond_block);
 	}
 
 	// continue building in merge block
-	builder.set_insert_block(merge_block);
+	current_func.add_block(std::move(merge_block));
+	builder.set_insert_block(current_func.back());
 }
 void mir_lowering_visitor::visit(std::shared_ptr<return_statement> ret_stmt) {
 	// lower the return expression

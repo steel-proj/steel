@@ -22,6 +22,9 @@ public:
 	inline void set_insert_block(mir_block* block) {
 		ins_block = block;
 	}
+	inline mir_block* get_insert_block() const {
+		return ins_block;
+	}
 
 	// builder functions
 	
