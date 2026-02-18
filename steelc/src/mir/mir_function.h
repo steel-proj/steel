@@ -12,11 +12,21 @@
 #include <sys/calling_convention.h>
 #include <utils/name_path.h>
 
+// mir_function_param
+//
+// Encapsulates a function parameter.
+
 struct mir_function_param {
 	mir_type type;
 	std::string name;
 	mir_value value;
 };
+
+// mir_function_flag
+//
+// Function flags typically used to control codegen behaviour for a function.
+// For example, MIR_FUNC_NO_MANGLE indicates that the function should not be
+// name mangled (e.g. for extern "C" functions).
 
 typedef uint32_t mir_function_flags;
 enum mir_function_flag : uint32_t {
@@ -27,8 +37,8 @@ enum mir_function_flag : uint32_t {
 
 // mir_function
 //
-// an mir_function represents a Steel function and is made
-// up of a sequence of mir blocks
+// An mir_function resembles a Steel function and is made
+// up of a sequence of MIR blocks
 //
 // notes:
 // - due to how block indexing works, blocks can only be added to the end,

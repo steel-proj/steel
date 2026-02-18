@@ -7,13 +7,17 @@
 
 // mir_block
 //
-// mir blocks are sequences of MIR instructions
+// MIR blocks are sequences of MIR instructions
 // they represent basic blocks within a function
 //
-// notes:
-// - index is -1 for blocks created without an owning function
-// - mir_function is responsible for assigning the index to any said mir_block within it,
-// hence its a friend class
+// Notes:
+// - To create a standalone block (without a parent function), use the static create() method.
+// If you later want to add this to a function, use mir_function::add_block() - make sure to std::move()!
+// (this allows for delayed block appending)
+// 
+// - To create a block in a function, use mir_function::add_block() instead,
+// it is much simpler and returns a raw mir_block* instead of a unique_ptr.
+//
 
 class mir_block {
 public:

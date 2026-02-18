@@ -166,6 +166,7 @@ target_sources(steelc_core PRIVATE
     "lexer/lexer.cpp"
     "lexer/lexer.h"
     "lexer/token.h"
+    
     "lexer/token_type.h"
     "lexer/token_utils.cpp"
     "lexer/token_utils.h"
@@ -184,6 +185,7 @@ target_sources(steelc_core PRIVATE
     "linking/sys/system_linker.h"
 
     # mir/
+    "mir/mir.h"
     "mir/mir_block.cpp"
     "mir/mir_block.h"
     "mir/mir_function.cpp"
