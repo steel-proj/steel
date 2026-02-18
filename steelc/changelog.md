@@ -19,7 +19,7 @@
 - Added support for unsigned integer types (ushort, uint and ulong).
 - Added support for the `null` literal which is equivalent to C++'s `nullptr` and can be implicitly converted to any pointer type.
 - Added support for (arithmetic) compound assignment operators (+=, -=, *=, /=, %=).
-- Added support for lowering if statements to MIR using the new MIR branching system.
+- Added support for lowering if statements, while loops and for loops to MIR.
 ### Changed
 - Seperated the project into steelc_core (the core library), steelc (the executable), and steelc_tests (the test suite).
 - Improved the assertion system by creating a dedicated s_assert macro thats more informative and should help to prevent crashes and improve debugging.
