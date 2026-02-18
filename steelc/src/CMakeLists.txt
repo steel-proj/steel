@@ -53,6 +53,8 @@ target_sources(steelc_core PRIVATE
     "ast_lowering/mir_lowerer.h"
     "ast_lowering/mir_lowering_visitor.cpp"
     "ast_lowering/mir_lowering_visitor.h"
+    "ast_lowering/helpers/loop_helper.cpp"
+    "ast_lowering/helpers/loop_helper.h"
 
     # ast_passes/
     "ast_passes/compile_time_computator.cpp"
@@ -177,7 +179,6 @@ target_sources(steelc_core PRIVATE
     "linking/linker.h"
     "linking/link_config.h"
     "linking/link_data.h"
-    
     "linking/link_result.h"
     "linking/impl/coff_linker.cpp"
     "linking/impl/coff_linker.h"
