@@ -43,4 +43,15 @@ struct mir_block_ref {
 	const mir_block* block;
 };
 
+using mir_operand = std::variant<
+	mir_value,
+	mir_const_int,
+	mir_const_float,
+	mir_string_imm,
+	mir_nullptr,
+	mir_func_ref,
+	mir_field_ref,
+	mir_block_ref
+>;
+
 mir_type operand_type(const mir_operand& op);
