@@ -303,15 +303,43 @@ void mir_lowering_visitor::visit(std::shared_ptr<while_loop> while_loop) {
 	builder.set_insert_block(current_func.back());
 }
 void mir_lowering_visitor::visit(std::shared_ptr<return_statement> ret_stmt) {
-	// lower the return expression
-	if (ret_stmt->returns_value()) {
-		mir_operand ret_value = accept(ret_stmt->value);
-		builder.build_ret(ret_value);
+	auto build_ret = [&]() {
+		if (ret_stmt->returns_value()) {
+			mir_operand ret_value = accept(ret_stmt->value);
+			builder.build_ret(ret_value);
+		}
+		else {
+			// void return
+			builder.build_ret_void();
+		}
+	};
+
+	if (!ret_stmt->is_conditional()) {
+		build_ret();
+		return;
 	}
-	else {
-		// void return
-		builder.build_ret_void();
-	}
+
+	// conditional return - essentially an if statement
+	// with no else and a return in the then block
+
+	// lower condition
+	auto cond_op = accept(ret_stmt->condition);
+
+	auto ret_block = current_func.add_block("do_return");
+	auto dont_block = current_func.add_block("dont_return");
+
+	builder.build_cond_branch(
+		cond_op,
+		ret_block,
+		dont_block
+	);
+
+	// lower return block
+	builder.set_insert_block(ret_block);
+	build_ret();
+
+	// continue building in don't return block
+	builder.set_insert_block(dont_block);
 }
 
 mir_operand mir_lowering_visitor::get_local(const std::string& name) {
