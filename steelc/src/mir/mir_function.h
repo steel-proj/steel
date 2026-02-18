@@ -54,7 +54,16 @@ public:
 		return fn;
 	}
 
-	mir_block* get_entry_block();
+	inline mir_block* front() {
+		return blocks.empty() ? nullptr : blocks.front().get();
+	}
+	inline mir_block* back() {
+		return blocks.empty() ? nullptr : blocks.back().get();
+	}
+
+	inline mir_block* get_entry_block() {
+		return front();
+	}
 
 	inline bool empty() const {
 		return blocks.empty();
