@@ -40,7 +40,7 @@ struct mir_field_ref {
 };
 
 struct mir_block_ref {
-	int block_index;
+	const mir_block* block;
 };
 
 mir_type operand_type(const mir_operand& op);

@@ -40,11 +40,11 @@ codegen_result codegen::generate(size_t index) {
 	auto& mod = mir_modules[index];
 	codegen_result result;
 	try {
-		auto res = get_generator()->emit(mod, cfg);
+		auto res = get_generator()->emit(*mod, cfg);
 		result.merge(res);
 	}
 	catch (const codegen_exception& e) {
-		output::err("Codegen error in module {}: {}\n", console_colors::RED, mod.name, e.message());
+		output::err("Codegen error in module {}: {}\n", console_colors::RED, mod->name, e.message());
 		result.success = false;
 	}
 	return result;

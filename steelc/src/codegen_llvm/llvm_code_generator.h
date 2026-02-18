@@ -102,7 +102,7 @@ private:
 
 	const mir_function* current_func_mir = nullptr;
 	llvm::Function* current_func = nullptr;
-	std::vector<llvm::BasicBlock*> current_blocks;
+	std::unordered_map<const mir_block*, llvm::BasicBlock*> current_blocks;
 
 	ssa_scope current_ssa;
 	name_mangler mangler;

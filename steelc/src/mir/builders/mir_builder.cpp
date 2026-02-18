@@ -114,7 +114,7 @@ void mir_builder::build_branch(mir_block* target) {
 	insert_instr({
 		.kind = mir_instr_opcode::BRA,
 		.operands = {
-			mir_block_ref{target->index}
+			mir_block_ref{target}
 		}
 	});
 }
@@ -129,8 +129,8 @@ void mir_builder::build_cond_branch(mir_operand condition, mir_block* true_block
 		.kind = mir_instr_opcode::BRA_CND,
 		.operands = {
 			condition,
-			mir_block_ref{true_block->index},
-			mir_block_ref{false_block->index}
+			mir_block_ref{true_block},
+			mir_block_ref{false_block}
 		}
 	});
 }

@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string>
-#include <deque>
+#include <vector>
+#include <memory>
 
 #include <mir/mir_function.h>
 
@@ -17,7 +18,11 @@ struct mir_module_meta {
 };
 
 struct mir_module {
+	mir_module() = default;
+	mir_module(const mir_module&) = delete;
+	mir_module& operator=(const mir_module&) = delete;
+
 	std::string name; // typically the source file name without extension
-	std::deque<mir_function> functions;
+	std::vector<std::unique_ptr<mir_function>> functions;
 	mir_module_meta meta;
 };

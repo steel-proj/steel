@@ -30,7 +30,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<variable_declaration> var) {
 }
 void mir_lowering_visitor::visit(std::shared_ptr<function_declaration> func) {
 	// set the builder to the function's entry block
-	if (current_func.blocks.empty()) {
+	if (current_func.empty()) {
 		current_func.add_block("entry");
 	}
 	builder.set_function(&current_func);
@@ -185,12 +185,12 @@ void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
 	mir_operand cond_op = accept(if_stmt->condition);
 
 	// then, else and merge blocks
-	mir_block* then_block = &current_func.add_block("if_then");
+	mir_block* then_block = current_func.add_block("if_then");
 	mir_block* else_block = nullptr;
 	if (if_stmt->else_node) {
-		else_block = &current_func.add_block("if_else");
+		else_block = current_func.add_block("if_else");
 	}
-	mir_block* merge_block = &current_func.add_block("if_merge");
+	mir_block* merge_block = current_func.add_block("if_merge");
 
 	// create branch
 	builder.build_cond_branch(
@@ -213,6 +213,79 @@ void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
 		if (!else_block->get_terminator()) {
 			builder.build_branch(merge_block);
 		}
+	}
+
+	// continue building in merge block
+	builder.set_insert_block(merge_block);
+}
+void mir_lowering_visitor::visit(std::shared_ptr<for_loop> for_loop) {
+	mir_block* init_block = current_func.add_block("for_init");
+	mir_block* cond_block = current_func.add_block("for_condition");
+	mir_block* body_block = current_func.add_block("for_body");
+	mir_block* merge_block = current_func.add_block("for_merge");
+
+	// initial branch to initializer block
+	builder.build_branch(init_block);
+
+	// lower initializer block
+	builder.set_insert_block(init_block);
+	if (for_loop->initializer) {
+		for_loop->initializer->accept(*this);
+	}
+	builder.build_branch(cond_block);
+
+	// lower condition block
+	builder.set_insert_block(cond_block);
+	if (for_loop->condition) {
+		mir_operand cond_op = accept(for_loop->condition);
+		builder.build_cond_branch(
+			cond_op,
+			body_block,
+			merge_block
+		);
+	}
+	else {
+		// no condition means always true
+		builder.build_branch(body_block);
+	}
+
+	// lower body block
+	builder.set_insert_block(body_block);
+	for_loop->body->accept(*this);
+	if (for_loop->increment) {
+		for_loop->increment->accept(*this);
+	}
+	if (!body_block->get_terminator()) {
+		builder.build_branch(cond_block);
+	}
+
+	// continue building in merge block
+	builder.set_insert_block(merge_block);
+}
+void mir_lowering_visitor::visit(std::shared_ptr<while_loop> while_loop) {
+	// then, else and merge blocks
+	mir_block* cond_block = current_func.add_block("while_condition");
+	mir_block* body_block = current_func.add_block("while_body");
+	mir_block* merge_block = current_func.add_block("while_merge");
+
+	// initial branch to condition block
+	builder.build_branch(cond_block);
+
+	// lower condition block
+	builder.set_insert_block(cond_block);
+	mir_operand cond_op = accept(while_loop->condition);
+	builder.build_cond_branch(
+		cond_op,
+		body_block,
+		merge_block
+	);
+
+	// lower body block
+	builder.set_insert_block(body_block);
+	while_loop->body->accept(*this);
+	if (!body_block->get_terminator()) {
+		// branch back to condition
+		builder.build_branch(cond_block);
 	}
 
 	// continue building in merge block

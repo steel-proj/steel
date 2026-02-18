@@ -31,11 +31,11 @@ codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codege
 	nwriter = std::make_unique<llvm_native_writer>(module.get(), cfg.target, cfg.cpu);
 
 	for (const auto& fn : mod_mir.functions) {
-		emit_function(fn);
+		emit_function(*fn);
 	}
 
 	// verify generated module
-	verify_module();
+	//verify_module();
 
 	codegen_result result;
 	// IR files (optional, but we produce them anyway)
@@ -50,11 +50,11 @@ codegen_result llvm_code_generator::emit(const mir_module& mod_mir, const codege
 	}
 
 	// native object file
-	code_artifact obj_artifact;
+	/*code_artifact obj_artifact;
 	if (generate_native_object_artifact(mod_mir, obj_artifact)) {
 		result.artifacts.push_back(obj_artifact);
 	}
-	else throw codegen_exception("Failed to generate native object: " + nwriter->get_error());
+	else throw codegen_exception("Failed to generate native object: " + nwriter->get_error());*/
 
 	return result;
 }
@@ -73,14 +73,14 @@ llvm::Function* llvm_code_generator::emit_function(const mir_function& fn_mir) {
 		// we need to store it in another vector since
 		// llvm stopped allowing direct indexing into the
 		// functions block list
-		current_blocks.reserve(fn_mir.blocks.size());
-		for (const auto& block : fn_mir.blocks) {
+		current_blocks.reserve(fn_mir.get_blocks().size());
+		for (const auto& block : fn_mir.get_blocks()) {
 			llvm::BasicBlock* bb = llvm::BasicBlock::Create(
 				context,
-				block.name,
+				block->name,
 				fn_llvm
 			);
-			current_blocks.push_back(bb);
+			current_blocks[block.get()] = bb;
 		}
 
 		// map parameter values -> llvm values
@@ -91,8 +91,8 @@ llvm::Function* llvm_code_generator::emit_function(const mir_function& fn_mir) {
 		}
 
 		// emit block bodies
-		for (const auto& block : fn_mir.blocks) {
-			emit_block(block);
+		for (const auto& block : fn_mir.get_blocks()) {
+			emit_block(*block);
 		}
 	}
 
@@ -105,7 +105,7 @@ llvm::BasicBlock* llvm_code_generator::emit_block(const mir_block& block_mir) {
 		throw codegen_exception("Cannot emit block outside of function");
 	}
 
-	llvm::BasicBlock* block_llvm = current_blocks[block_mir.index];
+	llvm::BasicBlock* block_llvm = current_blocks[&block_mir];
 	if (!block_llvm) {
 		// fallback (create block now)
 		block_llvm = llvm::BasicBlock::Create(
@@ -398,13 +398,7 @@ llvm::Value* llvm_code_generator::lower_operand(const mir_operand& op_mir) {
 			return nullptr;
 		}
 		else if constexpr (std::is_same_v<T, mir_block_ref>) {
-			if (arg.block_index <= -1) {
-				return nullptr; // null block reference
-			}
-			else if (arg.block_index > current_blocks.size()) {
-				throw codegen_exception("Block reference out of range");
-			}
-			return current_blocks[arg.block_index];
+			return current_blocks[arg.block];
 		}
 		else {
 			static_assert(always_false<T>::value, "Non-exhaustive visitor in llvm_code_generator::lower_operand");

@@ -144,12 +144,12 @@ bool compiler::compile(const compile_config& cl_cfg, codegen_config& cg_cfg) {
 
 	// lower ast to mir
 	mir_lowerer mir_lowerer(ctx);
-	std::vector<mir_module> mir_modules = mir_lowerer.lower_all(compilation_units);
+	std::vector<std::unique_ptr<mir_module>> mir_modules = mir_lowerer.lower_all(compilation_units);
 
 	if (cl_cfg.print_mir) {
 		mir_printer printer;
 		for (const auto& mod : mir_modules) {
-			std::string mir_text = printer.print_module(mod);
+			std::string mir_text = printer.print_module(*mod);
 			output::print("Generated MIR:\n");
 			output::print("{}\n", "", mir_text);
 		}
@@ -157,7 +157,7 @@ bool compiler::compile(const compile_config& cl_cfg, codegen_config& cg_cfg) {
 
 	// generate modules for all units
 	// its expected that backend and ir_format have been validated before this point
-	codegen codegen(mir_modules, cg_cfg);
+	codegen codegen(std::move(mir_modules), cg_cfg);
 	codegen_result = codegen.generate_all();
 
 	return codegen_result.success;

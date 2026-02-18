@@ -16,19 +16,19 @@
 std::string name_mangler::mangle_function(const mir_function& fn_mir) {
 	if (fn_mir.flags & MIR_FUNC_NO_MANGLE) {
 		// no mangling
-		return fn_mir.name;
+		return fn_mir.name.name;
 	}
 
 	std::vector<mir_type> param_types;
 	for (const auto& param : fn_mir.params) {
 		param_types.push_back(param.type);
 	}
-	return mangle_function(fn_mir.name, fn_mir.scopes, fn_mir.generic_args, param_types);
+	return mangle_function(fn_mir.name, fn_mir.generic_args, param_types);
 }
 
-std::string name_mangler::mangle_function(const std::string& name, const std::vector<std::string>& scopes, const std::vector<mir_type>& generic_args, const std::vector<mir_type>& param_types) {
+std::string name_mangler::mangle_function(const name_path& name, const std::vector<mir_type>& generic_args, const std::vector<mir_type>& param_types) {
 	/*// no mangle for bare-bone functions
-	if (scopes.empty()) {
+	if (!name.is_qualified()) {
 		return name;
 	}*/
 	// ^^ temporalily always mangle
@@ -37,18 +37,18 @@ std::string name_mangler::mangle_function(const std::string& name, const std::ve
 
 	// technically will always be true since empty scopes return the name immediately
 	// might change this later
-	if (scopes.size() > 0) {
+	if (name.is_qualified()) {
 		mangled += "N"; // start of nested name
-		for (const auto& scope_name : scopes) {
+		for (const auto& scope_name : name.scopes) {
 			mangled += mangle_text(scope_name);
 		}
 	}
 
 	// mangle function name
-	mangled += mangle_text(name);
+	mangled += mangle_text(name.name);
 
 	// E for end of nested name
-	if (scopes.size() > 0) {
+	if (name.is_qualified()) {
 		mangled += "E";
 	}
 

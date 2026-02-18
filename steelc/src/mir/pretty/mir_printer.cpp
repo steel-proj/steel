@@ -8,16 +8,12 @@
 std::string mir_printer::print_module(const mir_module& module) {
 	std::string result;
 	for (const auto& func : module.functions) {
-		result += print_function(func);
+		result += print_function(*func);
 	}
 	return result;
 }
 std::string mir_printer::print_function(const mir_function& func) {
-	std::string full_name;
-	for (const auto& scope : func.scopes) {
-		full_name += scope + "::";
-	}
-	full_name += func.name;
+	std::string full_name = func.name.flatten();
 
 	std::string params = "(";
 	for (size_t pi = 0; pi < func.params.size(); pi++) {
@@ -41,8 +37,8 @@ std::string mir_printer::print_function(const mir_function& func) {
 	std::string result = "func " + full_name + params + " {\n";
 
 	current_func = &func;
-	for (const auto& block : func.blocks) {
-		result += print_block(block);
+	for (const auto& block : func.get_blocks()) {
+		result += print_block(*block);
 	}
 	current_func = nullptr;
 
@@ -128,15 +124,10 @@ std::string mir_printer::operand_to_str(const mir_operand& operand) {
 			return "\"" + arg.value + "\"";
 		}
 		else if constexpr (std::is_same_v<T, mir_func_ref>) {
-			std::string result;
 			if (!arg.function) {
 				return "func(<unknown>)";
 			}
-			for (const auto& scope : arg.function->scopes) {
-				result += scope + "::";
-			}
-			result += arg.function->name;
-			return "func(" + result + ")";
+			return "func(" + arg.function->name.flatten() + ")";
 		}
 		else if constexpr (std::is_same_v<T, mir_nullptr>) {
 			return "null";
@@ -145,13 +136,10 @@ std::string mir_printer::operand_to_str(const mir_operand& operand) {
 			return "field(" + std::to_string(arg.index) + ")";
 		}
 		else if constexpr (std::is_same_v<T, mir_block_ref>) {
-			if (arg.block_index <= -1) {
+			if (!arg.block) {
 				return "none";
 			}
-			if (current_func && arg.block_index < current_func->blocks.size()) {
-				return current_func->blocks[arg.block_index].name;
-			}
-			return "block(" + std::to_string(arg.block_index) + ")";
+			return "block(" + arg.block->name + ")";
 		}
 		else {
 			return "unknown_operand";
