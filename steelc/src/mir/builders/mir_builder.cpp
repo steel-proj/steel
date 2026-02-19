@@ -87,6 +87,24 @@ mir_value mir_builder::build_binary_op(mir_instr_opcode opcode, mir_operand lhs,
 	});
 	return result;
 }
+mir_operand mir_builder::build_select(mir_operand condition, mir_operand true_value, mir_operand false_value, const std::string& result_name) {
+	s_assert(operand_type(condition).ty->is_bool(),
+		"Condition operand for select must be of boolean type");
+	s_assert(check_type_match(true_value, false_value),
+		"Both the true and false value must be the same type");
+
+	mir_value result = mir_value(operand_type(true_value), result_name);
+	insert_instr({
+		.kind = mir_instr_opcode::SELECT,
+		.type = operand_type(true_value),
+		.result = result,
+		.operands = {
+			mir_operand{condition},
+			mir_operand{true_value},
+			mir_operand{false_value}
+		}
+	});
+}
 
 mir_operand mir_builder::build_const_int(int64_t value, mir_type type) {
 	return mir_const_int {

@@ -32,13 +32,14 @@ public:
 	void build_ret_void();
 	void build_ret(mir_operand value);
 
-	// arithmetic expressions
+	// expressions
 	mir_value build_add(mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
 	mir_value build_sub(mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
 	mir_value build_mul(mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
 	mir_value build_div(mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
 	mir_value build_mod(mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
 	mir_value build_binary_op(mir_instr_opcode opcode, mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
+	mir_operand build_select(mir_operand condition, mir_operand true_value, mir_operand false_value, const std::string& result_name = "");
 
 	// literals/immediates/constants
 	mir_operand build_const_int(int64_t value, mir_type type);
