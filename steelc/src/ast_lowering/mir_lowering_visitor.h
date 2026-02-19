@@ -11,6 +11,7 @@
 #include <mir/mir_function.h>
 #include <mir/mir_operand.h>
 #include <mir/builders/mir_builder.h>
+#include <ast_lowering/helpers/loop_helper.h>
 
 // mir_lowering_visitor
 // 
@@ -43,17 +44,18 @@ public:
 	void visit(std::shared_ptr<literal> literal) override;
 	void visit(std::shared_ptr<code_block> block) override;
 	void visit(std::shared_ptr<if_statement> if_stmt) override;
-	//void visit(std::shared_ptr<inline_if> inline_if);
+	void visit(std::shared_ptr<inline_if> inline_if);
 	void visit(std::shared_ptr<for_loop> for_loop);
 	void visit(std::shared_ptr<while_loop> while_loop);
 	void visit(std::shared_ptr<return_statement> ret_stmt) override;
-	//void visit(std::shared_ptr<break_statement> brk_stmt);
+	void visit(std::shared_ptr<break_statement> brk_stmt);
 
 private:
 	mir_function& current_func;
 	const std::unordered_map<const function_declaration*, mir_function*>& func_map;
 	mir_builder builder;
 
+	loop_helper loop_hlper;
 	std::vector<std::unordered_map<std::string, mir_operand>> locals_stack;
 
 	mir_operand result;

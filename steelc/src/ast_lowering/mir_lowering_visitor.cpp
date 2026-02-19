@@ -222,6 +222,9 @@ void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
 	current_func.add_block(std::move(merge_block));
 	builder.set_insert_block(current_func.back());
 }
+void mir_lowering_visitor::visit(std::shared_ptr<inline_if> inline_if) {
+	
+}
 void mir_lowering_visitor::visit(std::shared_ptr<for_loop> for_loop) {
 	mir_block* init_block = current_func.add_block("for_init");
 	mir_block* cond_block = current_func.add_block("for_condition");
@@ -253,12 +256,16 @@ void mir_lowering_visitor::visit(std::shared_ptr<for_loop> for_loop) {
 		builder.build_branch(body_block);
 	}
 
+	loop_hlper.push_loop(cond_block, merge_block.get());
+
 	// lower body block
 	builder.set_insert_block(body_block);
 	for_loop->body->accept(*this);
 	if (for_loop->increment) {
 		for_loop->increment->accept(*this);
 	}
+
+	loop_hlper.pop_loop();
 	
 	// branch back to condition
 	mir_block* current_block = builder.get_insert_block();
@@ -288,9 +295,13 @@ void mir_lowering_visitor::visit(std::shared_ptr<while_loop> while_loop) {
 		merge_block.get()
 	);
 
+	loop_hlper.push_loop(cond_block, merge_block.get());
+
 	// lower body block
 	builder.set_insert_block(body_block);
 	while_loop->body->accept(*this);
+
+	loop_hlper.pop_loop();
 	
 	mir_block* current_block = builder.get_insert_block();
 	if (current_block && !current_block->get_terminator()) {
@@ -340,6 +351,13 @@ void mir_lowering_visitor::visit(std::shared_ptr<return_statement> ret_stmt) {
 
 	// continue building in don't return block
 	builder.set_insert_block(dont_block);
+}
+void mir_lowering_visitor::visit(std::shared_ptr<break_statement> brk_stmt) {
+	s_assert(loop_hlper.in_loop(), "Break statement not within a loop");
+
+	auto ctx = loop_hlper.current_loop();
+	builder.build_branch(ctx->merge_block);
+	// ^^ branch to merge block for break
 }
 
 mir_operand mir_lowering_visitor::get_local(const std::string& name) {
