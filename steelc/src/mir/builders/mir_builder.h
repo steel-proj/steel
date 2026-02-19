@@ -38,8 +38,11 @@ public:
 	mir_value build_mul(mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
 	mir_value build_div(mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
 	mir_value build_mod(mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
-	mir_value build_binary_op(mir_instr_opcode opcode, mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
+	mir_value build_neg(mir_operand operand, const std::string& result_name = "");
+	mir_value build_not(mir_operand operand, const std::string& result_name = "");
 	mir_operand build_select(mir_operand condition, mir_operand true_value, mir_operand false_value, const std::string& result_name = "");
+	mir_value build_binary_op(mir_instr_opcode opcode, mir_operand lhs, mir_operand rhs, const std::string& result_name = "");
+	mir_value build_unary_op(mir_instr_opcode opcode, mir_operand operand, const std::string& result_name = "");
 
 	// literals/immediates/constants
 	mir_operand build_const_int(int64_t value, mir_type type);

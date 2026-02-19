@@ -40,6 +40,12 @@ mir_value mir_builder::build_div(mir_operand lhs, mir_operand rhs, const std::st
 mir_value mir_builder::build_mod(mir_operand lhs, mir_operand rhs, const std::string& result_name) {
 	return build_binary_op(mir_instr_opcode::MOD, lhs, rhs, result_name);
 }
+mir_value mir_builder::build_neg(mir_operand operand, const std::string& result_name) {
+	return build_binary_op(mir_instr_opcode::SUB, build_const_int(0, operand_type(operand)), operand, result_name);
+}
+mir_value mir_builder::build_not(mir_operand operand, const std::string& result_name) {
+	return mir_value();
+}
 mir_value mir_builder::build_binary_op(mir_instr_opcode opcode, mir_operand lhs, mir_operand rhs, const std::string& result_name) {
 	s_assert(check_type_match(lhs, rhs),
 		"Types don't match in binary operation");
@@ -66,7 +72,6 @@ mir_value mir_builder::build_binary_op(mir_instr_opcode opcode, mir_operand lhs,
 	// logical - always bool
 	case mir_instr_opcode::AND:
 	case mir_instr_opcode::OR:
-	case mir_instr_opcode::NOT:
 		result_type = mir_type{ data_type::get(DT_BOOL) };
 		break;
 	}
@@ -81,8 +86,33 @@ mir_value mir_builder::build_binary_op(mir_instr_opcode opcode, mir_operand lhs,
 		.type = result_type,
 		.result = result,
 		.operands = {
-			mir_operand{lhs},
-			mir_operand{rhs}
+			lhs,
+			rhs
+		}
+	});
+	return result;
+}
+mir_value mir_builder::build_unary_op(mir_instr_opcode opcode, mir_operand operand, const std::string& result_name) {
+	mir_type result_type = mir_type{ nullptr };
+	switch (opcode) {
+	case mir_instr_opcode::NEG:
+		result_type = operand_type(operand);
+		break;
+	case mir_instr_opcode::NOT:
+		result_type = mir_type{ data_type::get(DT_BOOL) };
+		break;
+	}
+
+	s_assert(result_type.ty != nullptr,
+		"Failed to identify unary operation result type");
+
+	mir_value result = mir_value(result_type, result_name);
+	insert_instr({
+		.kind = opcode,
+		.type = result_type,
+		.result = result,
+		.operands = {
+			operand
 		}
 	});
 	return result;
