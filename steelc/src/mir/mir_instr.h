@@ -14,7 +14,7 @@
 
 enum class mir_instr_opcode {
 	NOP,													// no operation
-	ADD, SUB, MUL, DIV, MOD,								// arithmetic
+	ADD, SUB, MUL, DIV, MOD, NEG,							// arithmetic
 	CMP_EQ, CMP_NEQ, CMP_LT, CMP_LTE, CMP_GT, CMP_GTE,		// comparison
 	AND, OR, NOT,											// logical
 	LOAD, STORE,											// memory operations
