@@ -149,6 +149,8 @@ target_sources(steelc_core PRIVATE
     "error/error_catalog.h"
     "error/error_printer.cpp"
     "error/error_printer.h"
+    "error/internal/assert.cpp"
+    "error/internal/assert.h"
 
     # input/
     "input/console_args.cpp"
@@ -168,7 +170,6 @@ target_sources(steelc_core PRIVATE
     "lexer/lexer.cpp"
     "lexer/lexer.h"
     "lexer/token.h"
-    
     "lexer/token_type.h"
     "lexer/token_utils.cpp"
     "lexer/token_utils.h"
@@ -296,8 +297,6 @@ target_sources(steelc_core PRIVATE
     "sys/target_triple.h"
 
     # utils/
-    "utils/assert.cpp"
-    "utils/assert.h"
     "utils/command_builder.cpp"
     "utils/command_builder.h"
     "utils/console_colors.cpp"

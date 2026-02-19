@@ -10,7 +10,7 @@
 #include <mir/mir_operand.h>
 #include <representations/entities/entity.h>
 #include <representations/entities/module_entity.h>
-#include <utils/assert.h>
+#include <error/internal/assert.h>
 
 void mir_lowering_visitor::visit(std::shared_ptr<variable_declaration> var) {
 	// create a local mir_value for the variable
