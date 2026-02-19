@@ -156,19 +156,44 @@ void mir_lowering_visitor::visit(std::shared_ptr<literal> literal) {
 			mir_type{ ty }
 		);
 	}
-	else if (ty->is_integral()) {
-		int64_t val_int = std::stoll(literal->value);
+	else if (ty->is_character()) {
+		// character counts as integral, but the value is a character literal string
+		s_assert(literal->value.length() != 1,
+			"Character literal value should be a single character");
+		
+		// ensure character is non-unicode
+		s_assert(static_cast<unsigned char>(literal->value[0]) <= 127,
+			"Only non-unicode characters are supported in character literals");
+
+		int64_t val_int = static_cast<unsigned char>(literal->value[0]);
 		result = builder.build_const_int(
 			val_int,
 			mir_type{ ty }
 		);
 	}
+	else if (ty->is_integral()) {
+		try {
+			int64_t val_int = std::stoll(literal->value);
+			result = builder.build_const_int(
+				val_int,
+				mir_type{ ty }
+			);
+		}
+		catch (const std::exception& e) {
+			s_assert(false, "Invalid integer literal value: {}", literal->value);
+		}
+	}
 	else if (ty->is_floating_point()) {
-		double val_float = std::stoll(literal->value);
-		result = builder.build_const_float(
-			val_float,
-			mir_type{ ty }
-		);
+		try {
+			double val_float = std::stod(literal->value);
+			result = builder.build_const_float(
+				val_float,
+				mir_type{ ty }
+			);
+		}
+		catch (const std::exception& e) {
+			s_assert(false, "Invalid floating-point literal value: {}", literal->value);
+		}
 	}
 	else if (ty->is_text()) {
 		result = builder.build_const_string(
@@ -180,7 +205,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<literal> literal) {
 		result = builder.build_const_nullptr();
 	}
 	else {
-		throw std::runtime_error("Unsupported literal type in MIR lowering");
+		s_assert(false, "Unsupported literal type in MIR lowering");
 	}
 }
 void mir_lowering_visitor::visit(std::shared_ptr<code_block> block) {
