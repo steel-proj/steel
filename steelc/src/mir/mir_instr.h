@@ -23,6 +23,7 @@ enum class mir_instr_opcode {
 	CALL,													// function call
 	RET,													// return from function
 	BRA, BRA_CND,											// branching
+	SELECT,													// select instruction (ternary operator)
 	PHI,													// SSA
 };
 
