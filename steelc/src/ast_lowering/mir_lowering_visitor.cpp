@@ -80,6 +80,21 @@ void mir_lowering_visitor::visit(std::shared_ptr<member_expression> expr) {
 
 	mir_operand obj = accept(expr->object);
 }
+void mir_lowering_visitor::visit(std::shared_ptr<unary_expression> expr) {
+	mir_operand operand = accept(expr->operand);
+	mir_operand unary_result;
+	switch (expr->oparator) {
+	case TT_NOT:
+		unary_result = builder.build_not(operand);
+		break;
+	case TT_SUBTRACT:
+		unary_result = builder.build_neg(operand);
+		break;
+	default:
+		throw std::runtime_error("Unsupported unary operator in MIR lowering");
+	}
+	result = unary_result;
+}
 void mir_lowering_visitor::visit(std::shared_ptr<identifier_expression> expr) {
 	if (expr->entity()->kind() == ENTITY_VARIABLE) {
 		// local variable

@@ -34,7 +34,7 @@ public:
 	void visit(std::shared_ptr<member_expression> expr);
 	//void visit(std::shared_ptr<address_of_expression> expr);
 	//void visit(std::shared_ptr<deref_expression> expr);
-	//void visit(std::shared_ptr<unary_expression> expr);
+	void visit(std::shared_ptr<unary_expression> expr);
 	//void visit(std::shared_ptr<index_expression> expr);
 	void visit(std::shared_ptr<identifier_expression> id) override;
 	//void visit(std::shared_ptr<this_expression> expr);
