@@ -31,6 +31,9 @@ public:
 		context_stack.pop_back();
 	}
 
+	inline bool in_loop() const {
+		return !context_stack.empty();
+	}
 	inline loop_context* current_loop() {
 		if (context_stack.empty()) {
 			return nullptr;
