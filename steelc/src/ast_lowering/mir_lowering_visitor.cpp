@@ -223,7 +223,26 @@ void mir_lowering_visitor::visit(std::shared_ptr<if_statement> if_stmt) {
 	builder.set_insert_block(current_func.back());
 }
 void mir_lowering_visitor::visit(std::shared_ptr<inline_if> inline_if) {
-	
+	mir_operand cond_op = accept(inline_if->condition);
+
+	mir_block* then_block = current_func.add_block("inl_if_then");
+	mir_block* merge_block = current_func.add_block("inl_if_merge");
+
+	builder.build_cond_branch(
+		cond_op,
+		then_block,
+		merge_block
+	);
+
+	// lower then statement
+	builder.set_insert_block(then_block);
+	inline_if->statement->accept(*this);
+	if (!then_block->get_terminator()) {
+		builder.build_branch(merge_block);
+	}
+
+	// continue building in merge block
+	builder.set_insert_block(merge_block);
 }
 void mir_lowering_visitor::visit(std::shared_ptr<for_loop> for_loop) {
 	mir_block* init_block = current_func.add_block("for_init");
