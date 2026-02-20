@@ -212,6 +212,8 @@ target_sources(steelc_core PRIVATE
     "modules/module_manager.h"
 
     # output/
+    "output/log_style.cpp"
+    "output/log_style.h"
     "output/log_file.cpp"
     "output/log_file.h"
     "output/output.cpp"
