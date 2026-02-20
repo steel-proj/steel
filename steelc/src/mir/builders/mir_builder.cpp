@@ -7,7 +7,7 @@
 #include <mir/mir_value.h>
 #include <mir/mir_instr.h>
 #include <mir/mir_operand.h>
-#include <error/internal/assert.h>
+#include <error/internal.h>
 
 void mir_builder::build_ret_void() {
 	insert_instr({

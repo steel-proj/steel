@@ -149,8 +149,8 @@ target_sources(steelc_core PRIVATE
     "error/error_catalog.h"
     "error/error_printer.cpp"
     "error/error_printer.h"
-    "error/internal/assert.cpp"
-    "error/internal/assert.h"
+    "error/internal.cpp"
+    "error/internal.h"
 
     # input/
     "input/console_args.cpp"
