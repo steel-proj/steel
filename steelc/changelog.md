@@ -28,13 +28,13 @@
 - The llvm_code_generator now verifies generated IR using the LLVM verifier which should help catch any late codegen bugs and avoid crashing or invalid IR generation.
 - Improved the changelog format to be structured into categories which I will now maintain for future entries.
 - Improved the error printing system to work with the new code_span system and provide more accurate error positions.
-- Completely revamped the output system to be more flexible and robust for console output and logging.
+- Completely revamped the output system to be more flexible and robust for all textual output, namely seperating logging, diagnostics and general output into their own subsystems that can be used independantly and configured seperately.
 ### Fixed
 - Fixed function parameters were not being mapped to their corresponding llvm values during codegen.
 - Fixed the name resolver not emitting an error when attempting to resolve function calls with an incorrect number of arguments (since it checked BEFORE filtering by argument count).
 - Fixed the init_checker accepting the initializer and condition of for loops before checking they're valid.
 ### Removed
-- Removed the previously required parenthesis around conditional returns and inline if statements, e.g. `return x if (2 + 2 == 4)` is now `return x if 2 + 2 == 4`, however both still work.
+- Removed the previously required parenthesis around conditional returns, conditional breaks, and inline if statements, e.g. `return x if (2 + 2 == 4)` is now `return x if 2 + 2 == 4`, however both still work.
 - Removed the `printf` call resolution bypass logic as we can now declare it using 'extern' and '#[no_mangle]' and link it properly.
 
 ## [0.6.0]
