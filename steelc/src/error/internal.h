@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string_view>
-#include <format>
+
+#include <formatting/formatting.h>
 
 // This file contains internal error handling utilities for within
 // the steel compiler.
@@ -40,7 +41,7 @@ template<typename... Args>
 	std::format_string<Args...> fmt,
 	Args&&... args
 ) {
-	auto message = std::format(fmt, std::forward<Args>(args)...);
+	auto message = formatting::format(fmt.get(), std::forward<Args>(args)...);
 	s_assert_fail_base(expr_str, file, line, func, message);
 }
 
@@ -59,6 +60,6 @@ template<typename... Args>
 	std::format_string<Args...> fmt,
 	Args&&... args
 ) {
-	auto message = std::format(fmt, std::forward<Args>(args)...);
+	auto message = formatting::format(fmt.get(), std::forward<Args>(args)...);
 	s_fatal_base(file, line, func, message);
 }

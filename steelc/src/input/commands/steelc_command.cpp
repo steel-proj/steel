@@ -9,8 +9,9 @@
 #include <input/commands/flags/command_flags.h>
 #include <input/commands/flags/flag_config.h>
 #include <input/console_args.h>
+#include <formatting/text_style.h>
 #include <output/output.h>
-#include <utils/console_colors.h>
+#include <diagnostics/diagnostics.h>
 
 bool steelc_command::execute(const console_args& args) const {
 	command_flags flags({});
@@ -25,13 +26,13 @@ bool steelc_command::execute(const console_args& args) const {
 
 	// handle global flags
 	if (flags.has("--verbose")) {
-		output::set_log_verbosity(LOG_VERBOSITY_HIGH);
+		//output::set_log_verbosity(LOG_VERBOSITY_HIGH);
 	}
 
 	return handler(flags);
 
-	if (flags.has("--verbose")) {
-		output::set_log_verbosity(LOG_VERBOSITY_NORMAL);
+	if (flags.has("--verbose")) { // TODO: reimplement this
+		//output::set_log_verbosity(LOG_VERBOSITY_NORMAL);
 	}
 }
 
@@ -51,7 +52,7 @@ bool steelc_command::parse_args(const console_args& args, command_flags& out_fla
 
 	for (auto rv_it = req_values.begin(); rv_it != req_values.end(); rv_it++) {
 		if (arg_it == args.end()) {
-			output::err("Error: missing required value: {}\n", console_colors::RED, *rv_it);
+			diagnostics::error("missing required value: {}\n", *rv_it);
 			return false;
 		}
 		parsed_flags[*rv_it] = { *arg_it++ };
@@ -63,13 +64,13 @@ bool steelc_command::parse_args(const console_args& args, command_flags& out_fla
 		bool is_global = global_flags.contains(arg);
 
 		if (!cfg_flags.contains(arg) && !is_global) {
-			output::print("Warn: unknown flag: {}\n", console_colors::YELLOW, arg);
+			diagnostics::warn("Warn: unknown flag: {}\n", arg);
 			++arg_it;
 			continue;
 		}
 
 		if (seen_flags.contains(arg)) {
-			output::err("Error: duplicate flag: {}\n", console_colors::RED, arg);
+			diagnostics::error("Error: duplicate flag: {}\n", arg);
 			return false;
 		}
 
@@ -87,7 +88,7 @@ bool steelc_command::parse_args(const console_args& args, command_flags& out_fla
 
 		for (int i = 0; i < expected; i++) {
 			if (arg_it == args.end()) {
-				output::err("Error: flag {} expects {} value(s), but fewer were provided.\n", console_colors::RED, arg, expected);
+				diagnostics::error("Error: flag {} expects {} value(s), but fewer were provided.\n", arg, expected);
 				return false;
 			}
 			values.push_back(*arg_it);

@@ -2,10 +2,10 @@
 
 #include <string>
 
-#include <error/error.h>
-#include <error/advice.h>
+#include <error/compilation_error.h>
+#include <error/compilation_advice.h>
 
-enum error_code {
+enum compilation_error_code {
     ERR_SUCCESS = 0,
     ERR_ID_EXPECTED,
     ERR_LBRACE_EXPECTED,
@@ -165,7 +165,7 @@ enum error_code {
     ERR_CANNOT_INFER_TYPE_NULL_INIT,
 };
 
-enum warning_code {
+enum compilation_warning_code {
     WARN_VARIABLE_UNUSED,
     WARN_FUNCTION_UNUSED,
     WARN_TYPE_UNUSED,
@@ -175,7 +175,7 @@ enum warning_code {
     WARN_CAST_UNNEEDED,
 };
 
-enum advice_code {
+enum compiler_advice_code {
     ADV_CONDITIONAL_NOT_GUARANTEED_TO_RETURN,
     ADV_IMPLEMENT_INTERFACE_METHOD,
     ADV_USE_POINTER_INSTEAD_OF_OWN_TYPE,
@@ -183,8 +183,8 @@ enum advice_code {
 };
 
 struct error_catalog {
-    static const error_info& get_error_info(error_code code) {
-        static const error_info errors[] = {
+    static const compilation_error_info& get_error_info(compilation_error_code code) {
+        static const compilation_error_info errors[] = {
             {"S001", "Identifier expected"},
             {"S002", "'{' expected"},
             {"S003", "'}' expected"},
@@ -345,8 +345,8 @@ struct error_catalog {
         return errors[code - 1 /* -1 to avoid ERR_SUCCESS */];
     }
 
-    static const error_info& get_warning_info(warning_code code) {
-        static const error_info warnings[] = {
+    static const compilation_error_info& get_warning_info(compilation_warning_code code) {
+        static const compilation_error_info warnings[] = {
             {"SW01", "Variable \"%s\" is declared but never used"},
             {"SW02", "Function \"%s\" is declared but never used"},
             {"SW03", "Type \"%s\" is declared but never used"},
@@ -358,8 +358,8 @@ struct error_catalog {
         return warnings[code];
     }
 
-    static const advice_info& get_advice_info(advice_code code) {
-        static const advice_info advices[] = {
+    static const compilation_advice_info& get_advice_info(compiler_advice_code code) {
+        static const compilation_advice_info advices[] = {
             {"SA01", "Conditional returns are not guaranteed to return, ensure an unconditional return is present incase all conditional returns are not executed"},
             {"SA02", "Implement required interface method: '%s'"},
             {"SA03", "To store objects of a type within itself, consider using a pointer (%s*)"},

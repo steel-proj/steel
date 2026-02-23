@@ -28,6 +28,7 @@
 - The llvm_code_generator now verifies generated IR using the LLVM verifier which should help catch any late codegen bugs and avoid crashing or invalid IR generation.
 - Improved the changelog format to be structured into categories which I will now maintain for future entries.
 - Improved the error printing system to work with the new code_span system and provide more accurate error positions.
+- Completely revamped the output system to be more flexible and robust for console output and logging.
 ### Fixed
 - Fixed function parameters were not being mapped to their corresponding llvm values during codegen.
 - Fixed the name resolver not emitting an error when attempting to resolve function calls with an incorrect number of arguments (since it checked BEFORE filtering by argument count).

@@ -24,3 +24,18 @@ std::string string_utils::vec_to_string(const std::vector<std::string>& vec, con
 	}
 	return result;
 }
+
+std::string string_utils::pad_left(std::string_view str, size_t total_length, char padding_char) {
+	std::string result(str);
+	if (result.size() < total_length) {
+		result.insert(result.begin(), total_length - result.size(), padding_char);
+	}
+	return result;
+}
+std::string string_utils::pad_right(std::string_view str, size_t total_length, char padding_char) {
+	std::string result(str);
+	if (result.size() < total_length) {
+		result.append(total_length - result.size(), padding_char);
+	}
+	return result;
+}

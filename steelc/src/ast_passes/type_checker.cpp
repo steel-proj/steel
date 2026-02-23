@@ -14,7 +14,7 @@
 #include <parser/parser_utils.h>
 #include <compiler/compilation_pass.h>
 #include <steelc/language_constants.h>
-#include <error/error_catalog.h>
+#include <error/compilation_error_catalog.h>
 #include <representations/types/types_fwd.h>
 #include <representations/types/data_type.h>
 #include <representations/types/custom_type.h>

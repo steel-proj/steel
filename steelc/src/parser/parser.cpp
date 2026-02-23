@@ -4,7 +4,7 @@
 #include <parser/modifier.h>
 #include <parser/parser_utils.h>
 #include <ast/ast.h>
-#include <error/error_catalog.h>
+#include <error/compilation_error_catalog.h>
 
 void parser::parse() {
 	while (!is_at_end()) {

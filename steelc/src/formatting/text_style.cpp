@@ -1,6 +1,6 @@
-#include "log_style.h"
+#include "text_style.h"
+#include "text_style.h"
 
-#include <sstream>
 #include <io.h>
 
 #include <sys/host_defs.h>
@@ -10,6 +10,8 @@
 #endif
 
 namespace {
+    bool enabled = false;
+
     bool is_terminal(FILE* stream) {
 		return _isatty(_fileno(stream)) != 0;
     }
@@ -46,8 +48,7 @@ namespace {
     }
 }
 
-void log_style::enable() {
-    static bool enabled = false;
+void text_style::enable() {
     if (enabled) {
         return;
     }
@@ -56,35 +57,6 @@ void log_style::enable() {
         enabled = enable_windows_ansi();
 	}
 }
-
-std::string log_style::to_ansi() const {
-	std::ostringstream oss;
-
-    std::ostringstream ss;
-    ss << "\033[";
-
-    // add attributes
-    if (attributes & static_cast<uint8_t>(attribute::BOLD)) {
-        ss << "1;";
-	}
-    if (attributes & static_cast<uint8_t>(attribute::DIM)) {
-        ss << "2;";
-    }
-    if (attributes & static_cast<uint8_t>(attribute::ITALIC)) {
-        ss << "3;";
-    }
-    if (attributes & static_cast<uint8_t>(attribute::UNDERLINE)) {
-        ss << "4;";
-    }
-    if (attributes & static_cast<uint8_t>(attribute::BLINK)) {
-        ss << "5;";
-    }
-    if (attributes & static_cast<uint8_t>(attribute::REVERSED)) {
-        ss << "7;";
-	}
-
-	// add foreground + background colors
-	ss << static_cast<uint8_t>(foreground) << ";" << (static_cast<uint8_t>(background) + 10) << "m";
-
-    return ss.str();
+bool text_style::is_enabled() {
+    return enabled;
 }

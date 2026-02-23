@@ -7,14 +7,15 @@
 #include <input/commands/flags/command_flags.h>
 #include <steelc/steelc_definitions.h>
 #include <output/output.h>
-#include <utils/console_colors.h>
+#include <formatting/text_style.h>
+#include <diagnostics/diagnostics.h>
 #include <utils/path_utils.h>
 #include <building/build_config.h>
 #include <building/project_builder.h>
 #include <stproj/stproj_generator.h>
 
 bool steelc_commands_impl::help_command_handler(const command_flags& flags) {
-	output::print("Commands:\n", console_colors::BOLD);
+	output::print(text_style().bold(), "Commands:\n");
 	output::print("steelc --help - Shows this help message.\n");
 	output::print("steelc --version - Displays the current version of steelc that is installed.\n");
 	output::print("steelc build <stproj-file | project-dir> [<args>] - Builds the project at path <stproj-file>, or attempts to build the project file located in <project-dir>.\n");
@@ -40,7 +41,7 @@ bool steelc_commands_impl::build_command_handler(const command_flags& flags) {
 			}
 		}
 		if (!found) {
-			output::err("No .stproj file found in directory: {}\n", console_colors::RED, project_file_path_n.string());
+			diagnostics::error("Error: No .stproj file found in directory: {}\n", project_file_path_n.string());
 			return false;
 		}
 	}
@@ -91,7 +92,7 @@ bool steelc_commands_impl::project_command_handler(const command_flags& flags) {
 		return generator.generate_new_project(name, std::filesystem::current_path());
 	}
 	else {
-		output::err("Unknown project option: {}\n", console_colors::RED, command);
+		diagnostics::error("Error: Unknown project option: {}\n", command);
 	}
 
 	return false;
@@ -103,7 +104,7 @@ bool steelc_commands_impl::test_command_handler(const command_flags& flags) {
 	int ec = std::system(command.c_str());
 	return ec == 0;
 #else
-	output::err("Tests are not enabled in this build of steelc.\n", console_colors::RED);
+	diagnostics::error("Error: Tests are not enabled in this build of steelc.\n");
 	return false;
 #endif
 }

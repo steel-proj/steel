@@ -7,7 +7,6 @@
 #include <string>
 
 #include <compiler/compilation_ctx.h>
-#include <utils/console_colors.h>
 #include <stproj/source_file.h>
 #include <lexer/lexer.h>
 #include <lexer/token.h>
@@ -30,17 +29,22 @@
 #include <codegen/codegen_result.h>
 #include <codegen/codegen_config.h>
 #include <codegen_llvm/llvm_code_generator.h>
+#include <diagnostics/diagnostics.h>
 #include <output/output.h>
 
 bool compiler::compile(const compile_config& cl_cfg, codegen_config& cg_cfg) {
 	compilation_ctx ctx(module_manager);
+	
+	// TODO:
+	// switch to a stage + pass based system
+	// rather than hardcoding
 
 	for (auto& file : sources) {
 		auto unit = std::make_shared<compilation_unit>();
 		unit->source_file = std::make_shared<source_file>(file);
 
-		output::print("Compiling: ", console_colors::BLUE);
-		output::print("\'{}\'\n", "", file.relative_path);
+		output::print(text_style::color::BLUE, "Compiling: ");
+		output::print("\'{}\'\n", file.relative_path);
 
 		lexer lexer(file.content, unit);
 		std::vector<token> tokens = lexer.tokenize();
@@ -150,8 +154,7 @@ bool compiler::compile(const compile_config& cl_cfg, codegen_config& cg_cfg) {
 		mir_printer printer;
 		for (const auto& mod : mir_modules) {
 			std::string mir_text = printer.print_module(*mod);
-			output::print("Generated MIR:\n");
-			output::print("{}\n", "", mir_text);
+			output::print("Generated MIR:\n{}\n", mir_text);
 		}
 	}
 
@@ -183,7 +186,7 @@ std::vector<std::string> compiler::read_source(std::string& path) {
 		file.close();
 	}
 	else {
-		std::cerr << "Error: Could not open file " << path << std::endl;
+		diagnostics::error("Error: Could not open file {}\n", path);
 	}
 	return lines;
 }

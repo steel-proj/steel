@@ -5,40 +5,45 @@
 #include <filesystem>
 #include <iostream>
 
-#include "../output/output.h"
+#include <diagnostics/diagnostics.h>
+#include <output/output.h>
 
 bool stproj_generator::generate_new_project(const std::string& name, const std::filesystem::path& location) {
 	const auto project_dir = location / name;
 	if (std::filesystem::exists(project_dir)) {
-		output::err("A project with the same name already exists at: \"{}\"", "", project_dir.string());
+		diagnostics::error("Error: A project or directory with the same name already exists at: \"{}\"", project_dir);
 		return false;
 	}
 
 	std::filesystem::create_directories(project_dir);
+	if (!std::filesystem::exists(project_dir) || !std::filesystem::is_directory(project_dir)) {
+		diagnostics::error("Error: Failed to create project directory at \"{}\".\n", project_dir);
+		return false;
+	}
 
-	if (!create_project_file(name, project_dir)) {
-		output::err("Failed to create project file.\n");
+	const auto project_file_path = project_dir / (name + ".stproj");
+	if (!create_project_file(name, project_file_path)) {
+		diagnostics::error("Error: Failed to create project file at \"{}\".\n", project_file_path);
 		return false;
 	}
 
 	const auto src_dir = project_dir / "src";
 	if (!std::filesystem::create_directory(src_dir)) {
-		output::err("Failed to create source directory.\n");
+		diagnostics::error("Error: Failed to create source directory at \"{}\".\n", src_dir);
 		return false;
 	}
 
 	if (!create_main_file(src_dir)) {
-		output::err("Failed to create main source file.\n");
+		diagnostics::error("Error: Failed to create main source file at \"{}\".\n", src_dir / "main.st");
 		return false;
 	}
 
-	output::print("Successfully created new project \"{}\" at: {}\n", "", name, project_dir.string());
+	output::print("Successfully created project \"{}\" at: {}\n", name, project_dir.string());
 	return true;
 }
 
 bool stproj_generator::create_project_file(const std::string& name, const std::filesystem::path& path) {
-	const std::filesystem::path project_file_path = path / (name + ".stproj");
-	std::ofstream project_file(project_file_path);
+	std::ofstream project_file(path);
 	if (!project_file.is_open()) {
 		return false;
 	}

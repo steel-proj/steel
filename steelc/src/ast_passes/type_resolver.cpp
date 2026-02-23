@@ -12,7 +12,7 @@
 #include <representations/entities/module_entity.h>
 #include <symbolics/lookup_result.h>
 #include <symbolics/symbol_error.h>
-#include <error/error_catalog.h>
+#include <error/compilation_error_catalog.h>
 #include <utils/string_utils.h>
 
 void type_resolver::visit(std::shared_ptr<function_declaration> func) {

@@ -9,7 +9,7 @@
 #include <codegen/error/codegen_exception.h>
 #include <codegen/codegen_result.h>
 #include <codegen/icode_generator.h>
-#include <output/output.h>
+#include <diagnostics/diagnostics.h>
 
 // -- code generator backend implementations --
 #include <codegen_llvm/llvm_code_generator.h>
@@ -44,7 +44,7 @@ codegen_result codegen::generate(size_t index) {
 		result.merge(res);
 	}
 	catch (const codegen_exception& e) {
-		output::err("Codegen error in module {}: {}\n", console_colors::RED, mod->name, e.message());
+		diagnostics::error("Codegen error in module {}: {}\n", mod->name, e.message());
 		result.success = false;
 	}
 	return result;

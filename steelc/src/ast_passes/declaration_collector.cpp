@@ -10,7 +10,7 @@
 #include <ast/ast.h>
 #include <lexer/token_utils.h>
 #include <parser/modifier.h>
-#include <error/error_catalog.h>
+#include <error/compilation_error_catalog.h>
 #include <compiler/compilation_pass.h>
 #include <modules/module_manager.h>
 #include <symbolics/symbol_table.h>
@@ -224,7 +224,7 @@ void declaration_collector::visit(std::shared_ptr<type_declaration> type_decl) {
 			flags |= mod.kind;
 		}
 		else {
-			error_code err = type_decl->type_kind == CT_CLASS ? ERR_INVALID_CLASS_MODIFIER :
+			compilation_error_code err = type_decl->type_kind == CT_CLASS ? ERR_INVALID_CLASS_MODIFIER :
 				type_decl->type_kind == CT_STRUCT ? ERR_INVALID_STRUCT_MODIFIER :
 				ERR_INVALID_INTERFACE_MODIFIER;
 			ERROR(err, mod.tk.span, to_string(mod.tk.type).c_str());

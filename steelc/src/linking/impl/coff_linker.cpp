@@ -4,7 +4,6 @@
 #include <string>
 #include <filesystem>
 
-#include <output/output.h>
 #include <codegen/code_artifact.h>
 #include <codegen/codegen_config.h>
 #include <linking/link_result.h>
@@ -16,6 +15,7 @@
 #include <sys/host_defs.h>
 #include <sys/platform.h>
 #include <sys/shell.h>
+#include <diagnostics/diagnostics.h>
 
 namespace fs = std::filesystem;
 
@@ -41,7 +41,7 @@ link_result coff_linker::link(const link_data& data) {
 		};
 	}
 	else if (abi == platform_abi::UNKNOWN) {
-		output::verbose("No abi specified. Using default (msvc).\n");
+		diagnostics::warn("Warn: No abi specified. Using default (msvc).\n");
 		abi = platform_abi::MSVC;
 	}
 	else if (abi != platform_abi::MSVC) {
@@ -86,7 +86,7 @@ link_result coff_linker::link(const link_data& data) {
 	else if (arch == platform_arch::UNKNOWN) {
 		platform_arch host_arch = get_host_arch();
 		arch_str = get_arch_string(host_arch);
-		output::verbose("No architecture specified. Using host ({}).\n", console_colors::DIM, arch_str, "\n");
+		diagnostics::warn("Warn: No architecture specified. Using host ({}).\n", arch_str, "\n");
 		arch = host_arch;
 	}
 	else {
@@ -103,7 +103,7 @@ link_result coff_linker::link(const link_data& data) {
 		}
 	}
 	else {
-		output::print("Warn: Could not capture standard library paths, linking will likely fail.\n");
+		diagnostics::warn("Warn: Could not capture standard library paths, linking will likely fail.\n");
 	}
 
 	// subsystem (always console for now)

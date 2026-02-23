@@ -18,7 +18,7 @@
 #include <representations/types/custom_type.h>
 #include <representations/types/container_types.h>
 #include <ast_passes/helpers/function_filter.h>
-#include <error/error_catalog.h>
+#include <error/compilation_error_catalog.h>
 #include <utils/string_utils.h>
 
 void name_resolver::visit(std::shared_ptr<function_declaration> func) {

@@ -143,14 +143,33 @@ target_sources(steelc_core PRIVATE
     "compiler/compile_config.h"
     "compiler/instantiation_worklist.h"
 
+    # diagnostics/
+    "diagnostics/diagnostics.cpp"
+    "diagnostics/diagnostics.h"
+
     # error/
-    "error/advice.h"
-    "error/error.h"
-    "error/error_catalog.h"
-    "error/error_printer.cpp"
-    "error/error_printer.h"
+    "error/compilation_advice.h"
+    "error/compilation_error.h"
+    "error/compilation_error_catalog.h"
     "error/internal.cpp"
     "error/internal.h"
+
+    # formatting/
+    "formatting/std_formatters.h"
+    "formatting/formatting.cpp"
+    "formatting/formatting.h"
+    "formatting/styled_paragraph.cpp"
+    "formatting/styled_paragraph.h"
+    "formatting/styled_string.cpp"
+    "formatting/styled_string.h"
+    "formatting/text_style.cpp"
+    "formatting/text_style.h"
+    "formatting/ansi/ansi_style_formatting.cpp"
+    "formatting/ansi/ansi_style_formatting.h"
+    "formatting/error_formatting/error_formatter.cpp"
+    "formatting/error_formatting/error_formatter.h"
+    "formatting/error_formatting/source_context.cpp" 
+    "formatting/error_formatting/source_context.h"
 
     # input/
     "input/console_args.cpp"
@@ -212,12 +231,15 @@ target_sources(steelc_core PRIVATE
     "modules/module_manager.h"
 
     # output/
-    "output/log_style.cpp"
-    "output/log_style.h"
+    "output/ioutput_sink.h"
     "output/log_file.cpp"
     "output/log_file.h"
     "output/output.cpp"
     "output/output.h"
+    "output/router.h"
+    "output/logging/log.cpp"
+    "output/logging/log.h"
+    "output/sinks/stream_sink.h"
 
     # parser/
     "parser/modifier.h"
@@ -301,9 +323,9 @@ target_sources(steelc_core PRIVATE
     # utils/
     "utils/command_builder.cpp"
     "utils/command_builder.h"
-    "utils/console_colors.cpp"
-    "utils/console_colors.h"
     "utils/iclonable.h"
+    "utils/math_utils.h"
+    "utils/math_utils.cpp"
     "utils/maybe.h"
     "utils/name_path.cpp"
     "utils/name_path.h"
@@ -311,7 +333,7 @@ target_sources(steelc_core PRIVATE
     "utils/path_utils.h"
     "utils/string_utils.h"
     "utils/string_utils.cpp"
-)
+ "debugging/stack_trace.h" "debugging/stack_trace.cpp" "output/sinks/file_sink.h" "output/router.cpp")
 
 target_include_directories(steelc_core
 PUBLIC

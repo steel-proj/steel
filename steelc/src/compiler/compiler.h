@@ -4,7 +4,7 @@
 #include <string>
 #include <memory>
 
-#include <error/error.h>
+#include <error/compilation_error.h>
 #include <ast/compilation_unit.h>
 #include <modules/module_manager.h>
 #include <compiler/compile_config.h>
@@ -28,10 +28,10 @@ public:
 		return !warnings.empty();
 	}
 
-	inline const std::vector<error>& get_errors() const {
+	inline const std::vector<compilation_error>& get_errors() const {
 		return errors;
 	}
-	inline const std::vector<error>& get_warnings() const {
+	inline const std::vector<compilation_error>& get_warnings() const {
 		return warnings;
 	}
 
@@ -49,8 +49,8 @@ public:
 private:
 	std::vector<std::shared_ptr<compilation_unit>> compilation_units;
 
-	std::vector<error> errors;
-	std::vector<error> warnings;
+	std::vector<compilation_error> errors;
+	std::vector<compilation_error> warnings;
 
 	module_manager module_manager;
 

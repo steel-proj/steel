@@ -5,6 +5,19 @@ project(steelc LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# platform-tools interface
+add_library(platform_tools INTERFACE)
+
+# Windows-specific libraries
+if(WIN32)
+    find_library(DBGHELP_LIBRARY dbghelp)
+    if(DBGHELP_LIBRARY)
+        target_link_libraries(platform_tools INTERFACE ${DBGHELP_LIBRARY})
+    else()
+        message(FATAL_ERROR "dbghelp.lib not found!")
+    endif()
+endif()
+
 # LLVM
 find_package(LLVM REQUIRED CONFIG)
 
@@ -49,6 +62,7 @@ add_executable(steelc
 
 target_link_libraries(steelc PRIVATE
 	steelc_core
+    platform_tools
 )
 
 # testing

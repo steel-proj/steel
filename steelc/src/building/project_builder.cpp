@@ -11,11 +11,12 @@
 #include <unordered_set>
 #include <optional>
 
-#include <utils/console_colors.h>
 #include <utils/path_utils.h>
 #include <stproj/bad_stproj_exception.h>
 #include <output/output.h>
-#include <error/error_printer.h>
+#include <output/logging/log.h>
+#include <formatting/error_formatting/error_formatter.h>
+#include <diagnostics/diagnostics.h>
 #include <building/cache/source_metadata.h>
 #include <building/cache/artifact_metadata.h>
 #include <building/cache/build_cache_file.h>
@@ -44,13 +45,12 @@ static inline uint64_t now_unix_ms() {
 
 bool project_builder::load_project(const std::string& project_path) {
 	// load stproj
-	output::verbose("Loading project file at: \'{}\'\n", console_colors::DIM, project_path);
+	output::log::print("Loading project file at: \'{}\'\n", project_path);
 	try {
 		project_file = stproj_file::load(project_path);
 	}
 	catch (const bad_stproj_exception& err) {
-		output::err("Error loading project file: ", console_colors::RED);
-		output::err(err.message() + "\n");
+		diagnostics::error("Error loading project file: {}\n", err.message());
 		return false;
 	}
 }
@@ -84,7 +84,7 @@ bool project_builder::build_project() {
 
 	// early out if nothing to compile
 	if (to_compile.empty()) {
-		output::print("No changes detected, skipping compilation.\n", console_colors::BLUE);
+		output::print("No changes detected, skipping compilation.\n");
 	}
 	else {
 		// compile sources
@@ -95,26 +95,25 @@ bool project_builder::build_project() {
 		};
 
 		mark_compile_start();
-		output::print("Compiling {} source file(s)...\n", console_colors::BOLD, to_compile.size());
+		output::print("Compiling {} source file(s)...\n", to_compile.size());
 		if (cmp.compile(compile_cfg, codegen_cfg)) {
-			output::print("Compilation succeeded. ", console_colors::BOLD + console_colors::GREEN);
-			output::print("(Took {:.3f} seconds)\n", console_colors::DIM, get_compilation_time());
+			output::print(text_styles::SUCCESS, "Compilation succeeded. (Took {:.3f} seconds)\n", get_compilation_time());
 		}
 		else {
-			output::err("Compilation failed with {} errors.\n", console_colors::BOLD + console_colors::RED, cmp.get_error_count());
-			error_printer::print_errors(cmp.get_errors());
+			diagnostics::error("Compilation failed with {} errors.\n", cmp.get_error_count());
+			diagnostics::print_compilation_errors(cmp.get_errors());
 			return false;
 		}
 
 		codegen_result = cmp.get_result();
 	}
 
-	output::verbose("Initializing output system...\n");
-	output::verbose("Output directory: {}\n", console_colors::DIM, build_cfg.output_dir);
-	output::verbose("Intermediate directory: {}\n", console_colors::DIM, build_cfg.intermediate_dir);
+	output::log::print("Initializing output system...\n");
+	output::log::print("Output directory: {}\n", build_cfg.output_dir);
+	output::log::print("Intermediate directory: {}\n", build_cfg.intermediate_dir);
 	outputter = code_outputter::create(project_file->parent_path().string(), build_cfg);
 	if (!outputter) {
-		output::err("Failed to initialize output system, ensure output paths are valid and accessable.\n", console_colors::BOLD + console_colors::RED);
+		diagnostics::error("Error: Failed to initialize output system, ensure output paths are valid and accessable.\n");
 		return false;
 	}
 
@@ -133,7 +132,7 @@ bool project_builder::build_project() {
 			}
 
 			if (err != OUTPUT_SUCCESS) {
-				output::err("Failed to output IR file: {}\n", console_colors::BOLD + console_colors::RED, path);
+				diagnostics::error("Error: Failed to output IR file: {}\n", path);
 				return false;
 			}
 		}
@@ -149,7 +148,7 @@ bool project_builder::build_project() {
 	for (const auto& artifact : codegen_result.artifacts) {
 		if (artifact.kind == ARTIFACT_OBJECT) {
 			if (artifact.format != obj_format) {
-				output::err("Error: generated object file has invalid format: {} (expected {})\n", console_colors::BOLD + console_colors::RED, artifact.format, obj_format);
+				diagnostics::error("Error: generated object file has invalid format: {} (expected {})\n", artifact.format, obj_format);
 				return false;
 			}
 
@@ -198,15 +197,15 @@ bool project_builder::build_project() {
 	}
 	// report missing files
 	if (!missing.empty()) {
-		output::err("Error: missing IR artifacts for the following source files:\n", console_colors::BOLD + console_colors::RED);
+		diagnostics::error("Error: missing IR artifacts for the following source files:\n");
 		for (const auto& src : missing) {
-			output::err(" - {}\n", console_colors::BOLD + console_colors::RED, src);
+			diagnostics::error(" - {}\n", src);
 		}
-		output::err("This is likely an internal error, it is reccomended to run a clean and rebuild to regenerate missing files.\n", console_colors::BOLD + console_colors::RED);
+		diagnostics::error("This is likely an internal error, it is reccomended to run a clean and rebuild to regenerate missing files.\n");
 		return false;
 	}
 	
-	output::print("Linking {} object file(s)...\n", console_colors::BOLD, to_link_paths.size());
+	output::print(text_style().bold(), "Linking {} object file(s)...\n", to_link_paths.size());
 
 	// link to executable
 	link_data link_data{
@@ -217,19 +216,19 @@ bool project_builder::build_project() {
 	};
 	linker linker(link_data);
 	if (!linker.linker_available()) {
-		output::err("No suitable linker available for object format: {}\n", console_colors::BOLD + console_colors::RED, obj_format);
+		diagnostics::error("Error: No suitable linker available for object format: {}\n", obj_format);
 		return false;
 	}
 
 	link_result lnk_res = linker.link_all();
 	if (!lnk_res.success) {
-		output::err("Linking failed: {}\n", console_colors::BOLD + console_colors::RED, lnk_res.error.message);
+		diagnostics::error("Error: Linking failed: {}\n", lnk_res.error.message);
 		return false;
 	}
-	output::print("Linking succeeded.\n", console_colors::BOLD + console_colors::GREEN);
+	output::print("Linking succeeded.\n");
 
-	output::print("Building succeeded. ", console_colors::BOLD + console_colors::GREEN);
-	output::print("(Took {:.3f} seconds)\n", console_colors::DIM, get_build_time());
+	output::print(text_styles::SUCCESS, "Building succeeded. ");
+	output::print(text_styles::DIM, "(Took {:.3f} seconds)\n", get_build_time());
 
 	// save cache(s)
 	save_cache(cache);
@@ -237,9 +236,9 @@ bool project_builder::build_project() {
 
 	// run post-build commands
 	for (const auto& cmd : post_build_commands) {
-		output::print("Running post-build command: {}\n", console_colors::BOLD + console_colors::CYAN, cmd);
+		output::print(text_styles::colors::BLUE, "Running post-build command: {}\n", cmd);
 		if (int ec = run_build_command(cmd); ec != 0) {
-			output::err("Post-build command \"{}\" failed with exit code: {}\n", console_colors::BOLD + console_colors::RED, cmd, ec);
+			diagnostics::error("Post-build command \"{}\" failed with exit code: {}\n", cmd, ec);
 			return false;
 		}
 	}
@@ -292,7 +291,7 @@ std::string project_builder::get_artifact_path(const code_artifact& artifact, bo
 
 build_cache_file project_builder::load_cache() {
 	auto cache_path = path_utils::normalize(project_file->parent_path() / build_cfg.build_cache_file);
-	output::verbose("Loading build cache at: \'{}\'\n", console_colors::DIM, cache_path.string());
+	output::log::print("Loading build cache at: \'{}\'\n", cache_path.string());
 	// load existing cache
 	if (std::filesystem::exists(cache_path)) {
 		build_cache_file cache;
@@ -300,7 +299,7 @@ build_cache_file project_builder::load_cache() {
 			return cache;
 		}
 		else {
-			output::print("Warn: failed to load build cache, using default.\n", console_colors::YELLOW);
+			output::log::print("Warn: failed to load build cache, using default.\n");
 		}
 	}
 
@@ -380,14 +379,14 @@ std::vector<source_file> project_builder::get_files_to_compile(build_cache_file&
 
 void project_builder::load_vars_file() {
 	auto p = path_utils::normalize(project_file->parent_path() / build_cfg.vars_file);
-	output::verbose("Loading vars file at: \'{}\'\n", console_colors::DIM, p.string());
+	output::log::print("Loading vars file at: \'{}\'\n", p.string());
 
 	cached_vars.load_from_file(p);
 }
 void project_builder::save_vars_file() const {
 	auto p = path_utils::normalize(project_file->parent_path() / build_cfg.vars_file);
 	if (!cached_vars.save_to_file(p)) {
-		output::print("Warn: Failed to save vars file.\n", console_colors::YELLOW);
+		diagnostics::warn("Warn: Failed to save vars file.\n");
 	}
 }
 
@@ -464,13 +463,13 @@ bool project_builder::validate_config() {
 		ir_format = build_cfg.ir_format;
 
 		if (!codegen::validate_backend(backend)) {
-			output::err("Error: Unknown codegen backend specified: {}\n", console_colors::BOLD + console_colors::RED, backend);
+			diagnostics::error("Error: Unknown codegen backend specified: {}\n", backend);
 			return false;
 		}
 		
 		if (!codegen::backend_info(backend, &b_info)) {
 			// shouldnt happen since we validated above (but just in case)
-			output::err("Error: Failed to retrieve backend info for: {}\n", console_colors::BOLD + console_colors::RED, backend);
+			diagnostics::error("Error: Failed to retrieve backend info for: {}\n", backend);
 			return false;
 		}
 
@@ -478,18 +477,18 @@ bool project_builder::validate_config() {
 			if (ir_format.empty()) {
 				// use default
 				std::string def_format = b_info.supported_ir_formats[0];
-				output::verbose("Using default IR format ({}).\n", console_colors::YELLOW, def_format);
+				output::log::print("Using default IR format ({}).\n", def_format);
 			}
 			else {
 				// validate
 				if (!b_info.supports_ir_format(ir_format)) {
-					output::err("Error: Backend '{}' does not support IR format '{}'.\n", console_colors::BOLD + console_colors::RED, backend, ir_format);
+					diagnostics::error("Error: Backend '{}' does not support IR format '{}'.\n", backend, ir_format);
 					return false;
 				}
 			}
 		}
 		else if (!ir_format.empty()) {
-			output::print("Warn: IR format '{}' specified, but the backend '{}' does not produce IR.\n", console_colors::YELLOW, ir_format, backend);
+			diagnostics::warn("Warn: IR format '{}' specified, but the backend '{}' does not produce IR.\n", ir_format, backend);
 		}
 	}
 
@@ -497,7 +496,7 @@ bool project_builder::validate_config() {
 	{
 		if (build_cfg.target_triple.empty()) {
 			target = target_triple::host_triple();
-			output::print("Warn: No target triple specified, using host ({}).\n", console_colors::YELLOW, target.stringify());
+			diagnostics::warn("Warn: No target triple specified, using host ({}).\n", target.stringify());
 		}
 		else {
 			// parse provided target triple
@@ -506,17 +505,17 @@ bool project_builder::validate_config() {
 
 		// validate arch, os, abi
 		if (target.arch() == platform_arch::UNKNOWN) {
-			output::err("Error: Unknown or unsupported target architecture '{}'.\n", console_colors::BOLD + console_colors::RED, target.arch_str);
+			diagnostics::error("Error: Unknown or unsupported target architecture '{}'.\n", target.arch_str);
 			return false;
 		}
 		// dont care about vendor
 		if (target.os() == platform_os::UNKNOWN) {
-			if (!target.os_explicit()) output::err("Error: No operating system specified in target triple.\n");
-			else output::err("Error: Unknown or unsupported target operating system '{}'.\n", console_colors::BOLD + console_colors::RED, target.os_str);
+			if (!target.os_explicit()) diagnostics::error("Error: No operating system specified in target triple.\n");
+			else diagnostics::error("Error: Unknown or unsupported target operating system '{}'.\n", target.os_str);
 			return false;
 		}
 		if (target.abi() == platform_abi::UNKNOWN && target.abi_explicit()) {
-			output::err("Error: Unknown or unsupported target ABI '{}'.\n", console_colors::BOLD + console_colors::RED, target.abi_str);
+			diagnostics::error("Error: Unknown or unsupported target ABI '{}'.\n", target.abi_str);
 			return false;
 		}
 	}

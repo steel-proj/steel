@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <fstream>
 
 class log_file {
@@ -9,7 +10,7 @@ public:
 	~log_file();
 
 	bool open(const std::string& file_path);
-	void write(const std::string& message);
+	std::ofstream& stream() { return file_stream; }
 
 private:
 	std::string file_path;

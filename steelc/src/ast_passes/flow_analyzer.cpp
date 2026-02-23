@@ -2,7 +2,7 @@
 
 #include <ast/ast_node.h>
 #include <ast/ast.h>
-#include <error/error_catalog.h>
+#include <error/compilation_error_catalog.h>
 #include <compiler/compilation_pass.h>
 #include <ast/declarations/function_declaration.h>
 #include <representations/types/data_type.h>
