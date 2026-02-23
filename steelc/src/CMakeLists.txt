@@ -2,7 +2,9 @@
 
 add_library(steelc_core)
 
-# just to keep things tidy, we separate the source files into categories
+# just to keep things tidy, we separate the source files into categories.
+# everything is in alphabetical order including the categories themselves.
+# folders go after files, and we also put folders in alphabetical order.
 # additionally, we store headers just for convenience.
 
 target_sources(steelc_core PRIVATE
