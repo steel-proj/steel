@@ -143,6 +143,10 @@ target_sources(steelc_core PRIVATE
     "compiler/compile_config.h"
     "compiler/instantiation_worklist.h"
 
+    # debugging/
+    "debugging/stack_trace.cpp"
+    "debugging/stack_trace.h"
+
     # diagnostics/
     "diagnostics/diagnostics.cpp"
     "diagnostics/diagnostics.h"
@@ -240,6 +244,7 @@ target_sources(steelc_core PRIVATE
     "output/logging/log.cpp"
     "output/logging/log.h"
     "output/sinks/stream_sink.h"
+    "output/sinks/file_sink.h"
 
     # parser/
     "parser/modifier.h"
@@ -333,7 +338,7 @@ target_sources(steelc_core PRIVATE
     "utils/path_utils.h"
     "utils/string_utils.h"
     "utils/string_utils.cpp"
- "debugging/stack_trace.h" "debugging/stack_trace.cpp" "output/sinks/file_sink.h" "output/router.cpp")
+)
 
 target_include_directories(steelc_core
 PUBLIC
