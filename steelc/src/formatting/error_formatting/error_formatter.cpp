@@ -19,7 +19,7 @@ styled_paragraph error_formatting::pretty_error_formatter::format(const compilat
 	// pretty format:
 	// 
 	// ERROR <code>: <message>
-	// at: <file>:<line>:<col>
+	// in: <file>:<line>:<col>
 	// <lno> | <context line(s)>
 	//         ^~~~ HERE
 
@@ -27,8 +27,8 @@ styled_paragraph error_formatting::pretty_error_formatter::format(const compilat
 	p << styled_string(text_style(text_style::color::RED).bold(), "ERROR " + err.info.code + ": ");
 	p << styled_string(text_styles::colors::RED, err.info.message + "\n");
 
-	// at: <file>:<line>:<col>
-	p << "at: ";
+	// in: <file>:<line>:<col>
+	p << "at ";
 	p << styled_string(text_styles::colors::BRIGHT_YELLOW, ctx.file_path());
 	p << styled_string(text_styles::DIM, ":") << std::to_string(err.span.start.line);
 	p << styled_string(text_styles::DIM, ":") << std::to_string(err.span.start.column) + "\n";

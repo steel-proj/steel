@@ -1,6 +1,6 @@
 # STEELC CHANGELOG
 
-## [Unreleased]
+## [0.7.0]
 ### Added
 - Added a basic test suite (currently it's not very comprehensive but will be expanded over time to cover more and more of the compiler).
 - Added a command `steelc test` that runs the test suite (not available on non development builds).
