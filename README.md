@@ -1,7 +1,7 @@
 <h1 align="left">Steel<br/><img src="./assets/img/logo/png/white-1080.png" alt="Logo" align="right" height="230px"></h1>
 <p align="left">
     <img src="https://img.shields.io/badge/status-in_development-purple" alt="Status: In development">
-    <img src="https://img.shields.io/badge/latest_version-0.6.0-yellow" alt="Latest: 0.6.0">
+    <img src="https://img.shields.io/badge/latest_version-0.7.0-yellow" alt="Latest: 0.7.0">
     <img src="https://img.shields.io/github/stars/swzldev/Steel" alt="Stars badge">
 </p>
 <p>Steel is a performant, compiled programming language that aims to wipe out all bugs at compile time, leaving your program error free and blazing fast.</p>
