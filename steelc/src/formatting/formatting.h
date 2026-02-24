@@ -51,5 +51,5 @@ namespace formatting {
 		return result;
 	}
 
-	std::string format_path(const std::filesystem::path& p);
+	std::string format_path(const std::filesystem::path& p, bool use_system_seperator = false);
 }
