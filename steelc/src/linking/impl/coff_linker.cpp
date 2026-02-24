@@ -72,7 +72,7 @@ link_result coff_linker::link(const link_data& data) {
 
 	// add inputs
 	for (const auto& obj_path : data.object_files) {
-		cb << obj_path;
+		cb << formatting::format_path(obj_path);
 	}
 
 	// machine

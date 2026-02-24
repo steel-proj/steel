@@ -8,45 +8,25 @@
 
 #include <building/build_config.h>
 
-enum code_output_error {
-	OUTPUT_SUCCESS = 0,
-	OUTPUT_FAIL_INIT,
-	OUTPUT_FAIL_CREATE_FILE,
+enum class code_output_error {
+	SUCCESS = 0,
+	FAIL_CREATE_DIRECTORIES,
+	FAIL_CREATE_FILE,
 };
 
 class code_outputter {
 public:
-	// returns nullptr if failed to init
-	static std::unique_ptr<code_outputter> create(const std::string& project_dir, build_config cfg) {
-		auto outputter = std::unique_ptr<code_outputter>(new code_outputter(project_dir, cfg));
-		if (!outputter->init()) {
-			return nullptr;
-		}
-		return outputter;
+	inline static std::unique_ptr<code_outputter> create() {
+		return std::unique_ptr<code_outputter>(new code_outputter());
 	}
 
-	code_output_error output_code(const std::vector<uint8_t>& code, const std::string& filename);
-	code_output_error output_code(const std::string& code, const std::string& filename);
-
-	void clear_intermediate_files(const std::string& subpath = "") const;
-
-	inline std::filesystem::path get_output_dir() const {
-		return output_dir;
-	}
-	inline std::filesystem::path get_intermediate_dir() const {
-		return intermediate_dir;
-	}
+	// outputs textual data to the given path
+	code_output_error output_code(const std::filesystem::path& path, const std::string& text_data);
+	// outputs binary data to the given path
+	code_output_error output_code(const std::filesystem::path& path, const std::vector<uint8_t>& binary_data);
 
 private:
-	code_outputter(std::string project_dir, build_config cfg)
-		: project_dir(project_dir), build_cfg(cfg) {
-	}
+	code_outputter() = default;
 
-	std::filesystem::path project_dir;
-	std::filesystem::path output_dir;
-	std::filesystem::path intermediate_dir;
-	build_config build_cfg;
-
-	bool init();
-	code_output_error output_to(const std::string& data, const std::filesystem::path& path, bool binary);
+	code_output_error output_base(const std::filesystem::path& full_path, const std::string& data, bool binary);
 };

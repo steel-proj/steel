@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdint>
 
+#include <formatting/formatting.h>
 #include <building/cache/source_metadata.h>
 #include <building/cache/artifact_metadata.h>
 
@@ -70,7 +71,7 @@ bool build_cache_file::deserialize(const std::filesystem::path& path) {
 			artifact_metadata meta;
 
 			// path
-			read_string(file, &meta.path);
+			read_path(file, &meta.path);
 			// timestamp
 			file.read(reinterpret_cast<char*>(&meta.timestamp), sizeof(meta.timestamp));
 			// kind
@@ -98,7 +99,7 @@ bool build_cache_file::deserialize(const std::filesystem::path& path) {
 			// is_binary
 			file.read(reinterpret_cast<char*>(&meta.is_binary), sizeof(meta.is_binary));
 
-			art_metadata[meta.path] = meta;
+			art_metadata[formatting::format_path(meta.path)] = meta;
 		}
 	}
 
@@ -130,7 +131,7 @@ bool build_cache_file::serialize(const std::filesystem::path& path) const {
 
 	for (const auto& [path_str, meta] : src_metadata) {
 		// path
-		write_string(file, path_str);
+		write_path(file, path_str);
 
 		// last modified, hash, size
 		file.write(reinterpret_cast<const char*>(&meta.last_modified), sizeof(meta.last_modified));
@@ -144,7 +145,7 @@ bool build_cache_file::serialize(const std::filesystem::path& path) const {
 
 	for (const auto& [path_str, meta] : art_metadata) {
 		// path
-		write_string(file, meta.path);
+		write_path(file, meta.path);
 		// timestamp
 		file.write(reinterpret_cast<const char*>(&meta.timestamp), sizeof(meta.timestamp));
 		// kind
@@ -193,4 +194,13 @@ void build_cache_file::read_string(std::ifstream& file, std::string* str) const 
 	file.read(reinterpret_cast<char*>(&length), sizeof(length));
 	str->resize(length);
 	file.read(&(*str)[0], length);
+}
+void build_cache_file::write_path(std::ofstream& file, const std::filesystem::path& path) const {
+	// store as string for simplicity
+	write_string(file, formatting::format_path(path));
+}
+void build_cache_file::read_path(std::ifstream& file, std::filesystem::path* path) const {
+	std::string path_str;
+	read_string(file, &path_str);
+	*path = std::filesystem::path(path_str);
 }

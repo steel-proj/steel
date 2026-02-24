@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
@@ -25,7 +26,7 @@ enum artifact_kind {
 
 struct code_artifact {
 	artifact_kind kind;
-	std::string src_relpath;									// relative path of source that generated this artifact
+	std::filesystem::path src_relpath;							// relative path of source that generated this artifact
 	std::string name;											// logical name (no path)
 	std::string extension;										// e.g., ".o", ".bc", ".ll", etc.
 	std::string format;											// e.g., "ELF", "COFF", "LLVM-IR", etc.

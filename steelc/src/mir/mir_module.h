@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <filesystem>
 
 #include <mir/mir_function.h>
 
@@ -14,7 +15,7 @@
 // it is more closely related to an object file or a compilation unit
 
 struct mir_module_meta {
-	std::string src_relpath; // relative path of the source file that generated this module
+	std::filesystem::path src_relpath; // relative path of the source file that generated this module
 };
 
 struct mir_module {

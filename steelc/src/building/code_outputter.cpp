@@ -4,43 +4,27 @@
 #include <fstream>
 #include <string>
 
-code_output_error code_outputter::output_code(const std::vector<uint8_t>& bytes, const std::string& filename) {
-	std::string data(bytes.begin(), bytes.end());
-	return output_to(data, project_dir / filename, true);
-}
-code_output_error code_outputter::output_code(const std::string& text, const std::string& filename) {
-	return output_to(text, project_dir / filename, false);
-}
+#include <output/logging/log.h>
 
-void code_outputter::clear_intermediate_files(const std::string& subpath) const {
-	if (subpath.empty()) {
-		std::filesystem::remove_all(intermediate_dir);
-		std::filesystem::create_directories(intermediate_dir);
-	}
-	else {
-		std::filesystem::remove_all(intermediate_dir / subpath);
-		std::filesystem::create_directories(intermediate_dir / subpath);
-	}
+code_output_error code_outputter::output_code(const std::filesystem::path& path, const std::string& text_data) {
+	return output_base(path, text_data, false);
+}
+code_output_error code_outputter::output_code(const std::filesystem::path& path, const std::vector<uint8_t>& binary_data) {
+	std::string data_str(reinterpret_cast<const char*>(binary_data.data()), binary_data.size());
+	return output_base(path, data_str, true);
 }
 
-bool code_outputter::init() {
-	output_dir = project_dir / build_cfg.output_dir;
-	intermediate_dir = project_dir / build_cfg.intermediate_dir;
-
-	// create dirs
-	std::filesystem::create_directories(output_dir);
-	std::filesystem::create_directories(intermediate_dir);
-
-	if (!std::filesystem::exists(output_dir) || !std::filesystem::exists(intermediate_dir)) {
-		// failed to create output or intermediate dir
-		return false;
-	}
-
-	return true;
-}
-code_output_error code_outputter::output_to(const std::string& data, const std::filesystem::path& path, bool binary) {
+code_output_error code_outputter::output_base(const std::filesystem::path& path, const std::string& data, bool binary) {
 	// create directories (if nescessary)
-	std::filesystem::create_directories(path.parent_path());
+	if (path.has_parent_path()) {
+		std::error_code ec;
+		std::filesystem::create_directories(path.parent_path(), ec);
+		if (ec) {
+			output::log::print("Failed to create directories for path: {}\n", path.parent_path());
+			output::log::print("Error code: {} - {}\n", ec.value(), ec.message());
+			return code_output_error::FAIL_CREATE_DIRECTORIES;
+		}
+	}
 
 	std::ofstream file;
 	if (binary) {
@@ -51,9 +35,10 @@ code_output_error code_outputter::output_to(const std::string& data, const std::
 	}
 
 	if (!file || !file.is_open()) {
-		return OUTPUT_FAIL_CREATE_FILE;
+		return code_output_error::FAIL_CREATE_FILE;
 	}
 
+	// write data
 	if (binary) {
 		file.write(data.data(), static_cast<std::streamsize>(data.size()));
 	}
@@ -63,5 +48,5 @@ code_output_error code_outputter::output_to(const std::string& data, const std::
 
 	file.close();
 
-	return OUTPUT_SUCCESS;
+	return code_output_error::SUCCESS;
 }

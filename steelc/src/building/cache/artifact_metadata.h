@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 #include <cstdint>
 
 #include <codegen/code_artifact.h>
@@ -17,7 +18,7 @@ public:
 	artifact_metadata() = default;
 
 	// *RELATIVE* path (including output directory)
-	std::string path;
+	std::filesystem::path path;
 	uint64_t timestamp = 0;		// time generated (unix ms)
 	artifact_kind kind = ARTIFACT_IR;
 	std::string src_relpath;									// relative path of source that generated this artifact
