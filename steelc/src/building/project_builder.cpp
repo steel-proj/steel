@@ -119,8 +119,14 @@ bool project_builder::build_project() {
 			output::print(text_styles::SUCCESS, "Compilation succeeded. (Took {:.3f} seconds)\n", get_compilation_time());
 		}
 		else {
-			diagnostics::error("Compilation failed with {} errors.\n", cmp.get_error_count());
-			diagnostics::print_compilation_errors(cmp.get_errors());
+			diagnostics::error("Compilation failed with {} error(s).\n", cmp.get_error_count());
+
+			for (const auto& err : cmp.get_errors()) {
+				output::print("\n"); // add spacing between errors
+				diagnostics::print_compilation_error(err);
+			}
+			output::print("\n"); // space after errors
+
 			return false;
 		}
 
@@ -128,30 +134,25 @@ bool project_builder::build_project() {
 	}
 
 	output::log::print("Initializing output system...\n");
-	output::log::print("Output directory: {}\n", build_cfg.output_dir);
-	output::log::print("Intermediate directory: {}\n", build_cfg.intermediate_dir);
-	outputter = code_outputter::create(project_file->parent_path().string(), build_cfg);
-	if (!outputter) {
-		diagnostics::error("Error: Failed to initialize output system, ensure output paths are valid and accessable.\n");
-		return false;
-	}
+	outputter = code_outputter::create();
 
 	// output code (if any)
 	if (codegen_result.artifacts.size() > 0) {
 		for (const auto& artifact : codegen_result.artifacts) {
-			std::string path = get_artifact_path(artifact);
+			std::filesystem::path path = get_artifact_path(artifact, false);
 
-			code_output_error err = OUTPUT_SUCCESS;
+			code_output_error err = code_output_error::SUCCESS;
 
 			if (artifact.is_binary) {
-				err = outputter->output_code(artifact.bytes, path);
+				err = outputter->output_code(path, artifact.bytes);
 			}
 			else {
-				err = outputter->output_code(artifact.text, path);
+				err = outputter->output_code(path, artifact.text);
 			}
 
-			if (err != OUTPUT_SUCCESS) {
-				diagnostics::error("Error: Failed to output IR file: {}\n", path);
+			if (err != code_output_error::SUCCESS) {
+				output::log::print("Failed to output artifact: \"{}\" (Error code: {})\n", path, (int)err);
+				diagnostics::error("Error: Failed to output IR file: \"{}\"\n", path);
 				return false;
 			}
 		}
@@ -160,9 +161,9 @@ bool project_builder::build_project() {
 	std::string obj_format = system_formats::get_object_format();
 
 	// gather all irs
-	std::vector<std::string> to_link_paths;
-	std::unordered_set<std::string> compiled_srcs;
-	std::vector<std::string> missing;
+	std::vector<std::filesystem::path> to_link_paths;
+	std::unordered_set<std::filesystem::path> compiled_srcs;
+	std::vector<std::filesystem::path> missing;
 
 	for (const auto& artifact : codegen_result.artifacts) {
 		if (artifact.kind == ARTIFACT_OBJECT) {
@@ -171,8 +172,8 @@ bool project_builder::build_project() {
 				return false;
 			}
 
-			const std::string rel_art_path = get_artifact_path(artifact, true);
-			const std::string art_path = get_artifact_path(artifact, false);
+			const std::filesystem::path rel_art_path = get_artifact_path(artifact, true);
+			const std::filesystem::path art_path = get_artifact_path(artifact, false);
 
 			// we need to keep track of which source files were compiled
 			// so we can ensure we dont miss any
@@ -276,22 +277,19 @@ double project_builder::get_compilation_time() const {
 	return std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - compile_start).count();
 }
 
-std::string project_builder::get_artifact_path(const code_artifact& artifact, bool relative) const {
-	std::string path = "./";
+std::filesystem::path project_builder::get_artifact_path(const code_artifact& artifact, bool relative) const {
+	std::filesystem::path path;
 	switch (artifact.kind) {
 	case ARTIFACT_IR: {
-		path += build_cfg.intermediate_dir + "ir/";
-		path += artifact.src_relpath;
+		path = get_intermediate_dir() / "ir" / artifact.src_relpath;
 		break;
 	}
 	case ARTIFACT_OBJECT: {
-		path += build_cfg.intermediate_dir + "obj/";
-		path += artifact.src_relpath;
+		path = get_intermediate_dir() / "obj" / artifact.src_relpath;
 		break;
 	}
 	case ARTIFACT_BINARY: {
-		path += build_cfg.output_dir;
-		path += project_file->filename_no_extension().string();
+		path = get_output_dir() / project_file->filename_no_extension();
 		break;
 	}
 
@@ -378,12 +376,12 @@ std::vector<source_file> project_builder::get_files_to_compile(build_cache_file&
 	}
 
 	// cleanup cache - remove entries for files that no longer exist
-	std::unordered_set<std::string> source_set;
+	std::unordered_set<std::filesystem::path> source_set;
 	for (const auto& src : project_file->sources) {
 		source_set.insert(src.full_path);
 	}
 
-	std::vector<std::string> to_remove;
+	std::vector<std::filesystem::path> to_remove;
 	for (const auto& [path, meta] : metadata) {
 		if (!source_set.contains(path)) {
 			to_remove.push_back(path);
@@ -412,7 +410,7 @@ void project_builder::save_vars_file() const {
 source_metadata project_builder::generate_src_metadata(const source_file& src) {
 	source_metadata meta{};
 
-	meta.path = src.full_path;
+	meta.path = formatting::format_path(src.full_path);
 	meta.last_modified = src.get_last_modified_time();
 
 	// use hasher for hash and size to avoid opening a new file handle
@@ -426,7 +424,7 @@ artifact_metadata project_builder::generate_artifact_metadata(const code_artifac
 	meta.path = get_artifact_path(art, false);
 	meta.timestamp = now_unix_ms();
 	meta.kind = art.kind;
-	meta.src_relpath = art.src_relpath;
+	meta.src_relpath = formatting::format_path(art.src_relpath);
 	meta.name = art.name;
 	meta.extension = art.extension;
 	meta.format = art.format;

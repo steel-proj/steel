@@ -65,7 +65,8 @@ private:
 
 	// gets the path (relative/non-relative) for a given code artifact
 	// it uses the artifacts kind to determine the appropriate subdirectory
-	std::string get_artifact_path(const code_artifact& artifact, bool relative = true) const;
+	// and includes the filename + extension
+	std::filesystem::path get_artifact_path(const code_artifact& artifact, bool relative = true) const;
 
 	// returns filename of the project (WITHOUT .stproj)
 	inline std::string project_filename() const {
