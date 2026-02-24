@@ -10,13 +10,16 @@
 #include <cstdint>
 #include <unordered_set>
 #include <optional>
+#include <fstream>
 
 #include <utils/path_utils.h>
 #include <stproj/bad_stproj_exception.h>
 #include <output/output.h>
 #include <output/logging/log.h>
+#include <formatting/formatting.h>
 #include <formatting/error_formatting/error_formatter.h>
 #include <diagnostics/diagnostics.h>
+#include <output/sinks/file_sink.h>
 #include <building/cache/source_metadata.h>
 #include <building/cache/artifact_metadata.h>
 #include <building/cache/build_cache_file.h>
@@ -57,6 +60,22 @@ bool project_builder::load_project(const std::string& project_path) {
 bool project_builder::build_project() {
 	mark_build_start();
 	output::print("Build started...\n");
+
+	output::log::print("Attempting to create output directories...\n");
+	try {
+		std::filesystem::create_directories(get_output_dir());
+		std::filesystem::create_directories(get_intermediate_dir());
+
+		auto output_dir_fmt = formatting::format_path(get_output_dir());
+		auto intermediate_dir_fmt = formatting::format_path(get_intermediate_dir());
+		output::log::print("Sucessfully created output directories at:\n"
+			"Output dir: \"{}\"\nIntermediate dir: \"{}\"\n",
+			output_dir_fmt, intermediate_dir_fmt);
+	}
+	catch (const std::filesystem::filesystem_error& err) {
+		diagnostics::error("Error: Failed to create output directories: {}\n", err.what());
+		return false;
+	}
 
 	// validate config
 	if (!validate_config()) {
