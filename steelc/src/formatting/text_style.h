@@ -42,8 +42,9 @@ public:
 
 public:
     text_style() = default;
-    text_style(color fg, color bg = color::BLACK, attribute attr = attribute::NONE)
+    explicit text_style(color fg, color bg = color::BLACK, attribute attr = attribute::NONE)
         : foreground(fg), background(bg), attributes(static_cast<uint8_t>(attr)) {
+        // dont allow implicit - thats what text_styles::colors is for
     }
 
     static void enable(); // note: only *attempts* to enable

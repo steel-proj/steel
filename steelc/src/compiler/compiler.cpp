@@ -43,7 +43,7 @@ bool compiler::compile(const compile_config& cl_cfg, codegen_config& cg_cfg) {
 		auto unit = std::make_shared<compilation_unit>();
 		unit->source_file = std::make_shared<source_file>(file);
 
-		output::print(text_style::color::BLUE, "Compiling: ");
+		output::print(text_styles::colors::BLUE, "Compiling: ");
 		output::print("\'{}\'\n", file.relative_path);
 
 		lexer lexer(file.content, unit);
