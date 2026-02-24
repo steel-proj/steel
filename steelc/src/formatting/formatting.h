@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <format>
+#include <filesystem>
 
 #include <formatting/std_formatters.h>
 #include <formatting/styled_string.h>
@@ -49,4 +50,6 @@ namespace formatting {
 		}
 		return result;
 	}
+
+	std::string format_path(const std::filesystem::path& p);
 }
