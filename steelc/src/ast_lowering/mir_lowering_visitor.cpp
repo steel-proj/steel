@@ -158,7 +158,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<literal> literal) {
 	}
 	else if (ty->is_character()) {
 		// character counts as integral, but the value is a character literal string
-		s_assert(literal->value.length() != 1,
+		s_assert(literal->value.length() == 1,
 			"Character literal value should be a single character");
 		
 		// ensure character is non-unicode
