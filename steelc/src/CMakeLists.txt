@@ -242,6 +242,7 @@ target_sources(steelc_core PRIVATE
     "output/log_file.h"
     "output/output.cpp"
     "output/output.h"
+    "output/router.cpp"
     "output/router.h"
     "output/logging/log.cpp"
     "output/logging/log.h"
