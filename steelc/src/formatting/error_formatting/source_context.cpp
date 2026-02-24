@@ -2,7 +2,9 @@
 
 #include <vector>
 #include <algorithm>
+#include <string>
 
+#include <formatting/formatting.h>
 #include <error/compilation_error.h>
 #include <ast/compilation_unit.h>
 
@@ -22,9 +24,12 @@ error_formatting::source_context::source_context(const compilation_error& err) {
 }
 
 bool error_formatting::source_context::valid() const {
-	return src_file != nullptr && !context_lines.empty();
+	return src_file != nullptr &&
+		!context_lines.empty() &&
+		start_line_num > 0 &&
+		end_line_num >= start_line_num;
 }
 
 std::string error_formatting::source_context::file_path() const {
-	return src_file ? src_file->full_path : "<unknown file>";
+	return src_file ? formatting::format_path(src_file->relative_path) : "<unknown file>";
 }

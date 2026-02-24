@@ -9,13 +9,14 @@
 namespace error_formatting {
 	class source_context {
 	public:
-		static constexpr int CONTEXT_SIZE = 2;
+		static constexpr int CONTEXT_SIZE = 3;
 
 	public:
 		explicit source_context(const compilation_error& err);
 
 		bool valid() const;
 
+		// string as it may be "<unknown file>"
 		std::string file_path() const;
 		const std::vector<std::string>& lines() const { return context_lines; }
 
@@ -27,7 +28,7 @@ namespace error_formatting {
 		source_file* src_file;
 		std::vector<std::string> context_lines;
 
-		int start_line_num;
-		int end_line_num;
+		int start_line_num = -1;
+		int end_line_num = -1;
 	};
 }
