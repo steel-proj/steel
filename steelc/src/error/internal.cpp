@@ -1,8 +1,37 @@
 #include "internal.h"
 
+#include <sys/host_defs.h>
 #include <diagnostics/diagnostics.h>
 #include <debugging/stack_trace.h>
 #include <output/logging/log.h>
+
+#if defined(STEELC_PLATFORM_WINDOWS)
+#include <Windows.h>
+#endif
+
+namespace {
+// windows support only for now
+#if defined(STEELC_PLATFORM_WINDOWS)
+
+	bool is_debugger_attached() {
+		return IsDebuggerPresent() != 0;
+	}
+	void try_trigger_debug_break() {
+		if (is_debugger_attached()) {
+			__debugbreak();
+		}
+	}
+
+#else
+
+	bool is_debugger_attached() {
+		return false;
+	}
+	void try_trigger_debug_break() {
+	}
+
+#endif
+}
 
 void s_assert_fail_base(
 	const char* expr_str,
@@ -37,6 +66,9 @@ void s_assert_fail_base(
 		output::log::print("  at {} (0x{:x})\n", frame.function_name, frame.address);
 	}
 
+	// try to break
+	try_trigger_debug_break();
+
 	// safely exit
 	std::exit(INTERNAL_ASSERT_FAIL);
 }
@@ -61,6 +93,9 @@ void s_fatal_base(const char* file, int line, const char* func, std::string_view
 		// no symbol info
 		output::log::print("  at {} (0x{:x})\n", frame.function_name, frame.address);
 	}
+
+	// try to break
+	try_trigger_debug_break();
 
 	// safely exit
 	std::exit(INTERNAL_FATAL_ERROR);
