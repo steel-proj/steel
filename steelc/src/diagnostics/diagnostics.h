@@ -33,5 +33,5 @@ namespace diagnostics {
 		detail::output_fmt(text_styles::NOTE, fmt, std::forward<Args>(args)...);
 	}
 
-	void print_compilation_errors(const std::vector<compilation_error>& errors);
+	void print_compilation_error(const compilation_error& err);
 }
