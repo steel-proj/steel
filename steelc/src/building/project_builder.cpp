@@ -68,8 +68,8 @@ bool project_builder::build_project() {
 
 		auto output_dir_fmt = formatting::format_path(get_output_dir());
 		auto intermediate_dir_fmt = formatting::format_path(get_intermediate_dir());
-		output::log::print("Sucessfully created output directories at:\n"
-			"Output dir: \"{}\"\nIntermediate dir: \"{}\"\n",
+		output::log::print("Sucessfully created output directories:\n"
+			"- Output dir: \"{}\"\n- Intermediate dir: \"{}\"\n",
 			output_dir_fmt, intermediate_dir_fmt);
 	}
 	catch (const std::filesystem::filesystem_error& err) {
@@ -308,7 +308,7 @@ std::filesystem::path project_builder::get_artifact_path(const code_artifact& ar
 
 build_cache_file project_builder::load_cache() {
 	auto cache_path = path_utils::normalize(project_file->parent_path() / build_cfg.build_cache_file);
-	output::log::print("Loading build cache at: \'{}\'\n", cache_path.string());
+	output::log::print("Loading build cache at: \'{}\'\n", formatting::format_path(cache_path));
 	// load existing cache
 	if (std::filesystem::exists(cache_path)) {
 		build_cache_file cache;
@@ -396,7 +396,7 @@ std::vector<source_file> project_builder::get_files_to_compile(build_cache_file&
 
 void project_builder::load_vars_file() {
 	auto p = path_utils::normalize(project_file->parent_path() / build_cfg.vars_file);
-	output::log::print("Loading vars file at: \'{}\'\n", p.string());
+	output::log::print("Loading vars file at: \'{}\'\n", formatting::format_path(p));
 
 	cached_vars.load_from_file(p);
 }
