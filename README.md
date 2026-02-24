@@ -20,10 +20,12 @@
 
 <h2>Features</h2>
 <ul>
-    <li>Simple and easy to write syntax inspired by languages like C, Rust, Swift and more.</li>
-    <li>Informative error and warning system to debug code easily.</li>
-    <li>Comprehensive documentation on all aspects of the language.</li>
-    <li>VS Code extension to allow for syntax highlighting and quick code compilation. (In development)</li>
+    <li>Simple, clean, and easy to write syntax inspired by languages like C, Rust, Swift and more.</li>
+    <li>Informative diagnostics system to identify and fix code errors at the blink of an eye.</li>
+    <li>Full compilation to various targets & backends including LLVM for native codegen.</li>
+    <li>Project based build system with automatic dependancy management (WIP) and native linking.</li>
+    <li>Comprehensive documentation on all aspects of the language, including the compiler itself. (WIP)</li>
+    <li>VS Code extension for syntax highlighting and in-editor project management. (WIP)</li>
 </ul>
 
 <h2>Installation</h2>
@@ -52,17 +54,25 @@
 
 <p>Open up the 'src/main.st' file in your preferred code editor, and replace its content with the following:</p>
 
-<pre><code>func main() -> int {
-    printf("Hello, Steel!\n");
+<pre><code>extern func puts(str: string) -> int;
+extern func getchar() -> char;
+
+func main() -> int {
+    puts("Hello, Steel!");
+    getchar();
+
     return 0;
 }
 </code></pre>
 
-<p>Now let's build our project. Open up a terminal in the project folder and run the following command:</p>
+<p>Now let's build our project. Open up a terminal and run the following command:</p>
 
-<code>steelc build <project-name>.stproj</code>
+<code>steelc build &lt;project-path&gt;</code>
 
-<p><i>Replace &lt;project-name&gt; with the name you gave your project.</i></p>
+<p><i>Replace &lt;project-path&gt; with the path to your project, this can be either the project folder or the .stproj file itself.</i></p>
+
+> [!NOTE]
+> Relative paths are supported, so if you want to save time you can just run `steelc build .` if your terminal is already open in the project directory.
 
 <p>If everything builds successfully, you should now see a 'build' folder in your project directory. Open it up and run the executable inside, you should see "Hello, Steel!" displayed to the console.</p>
 
