@@ -1,4 +1,13 @@
-<h1 align="left">Steel<br/><img src="./assets/img/banner/png/github-banner.png" alt="The Steel Project" align="center" height="230px"></h1>
+<h1 align="left">Steel<br/>
+    <img src="./assets/img/banner/png/github-banner.png" alt="The Steel Project" align="center" height="230px">
+    <p>
+        <a href="#why-steel">Why Steel?</a> &bull;
+        <a href="#installation">Installation</a> &bull;
+        <a href="#getting-started">Getting Started</a> &bull;
+        <a href="#license">License</a>
+    </p>
+</h1>
+
 <p align="left">
     <img src="https://img.shields.io/badge/status-in_development-purple" alt="Status: In development">
     <img src="https://img.shields.io/badge/latest_version-0.7.0-yellow" alt="Latest: 0.7.0">
@@ -6,13 +15,6 @@
 </p>
 <p>This repository contains the main source code for Steel, including the compiler, standard library, and any related tools.</p>
 <p>Steel is a performant, compiled programming language that aims to wipe out all bugs at compile time, leaving your program error free and blazing fast.</p>
-
-<p>
-    <a href="#why-steel">Why Steel?</a> &bull;
-    <a href="#installation">Installation</a> &bull;
-    <a href="#getting-started">Getting Started</a> &bull;
-    <a href="#license">License</a>
-</p>
 
 <!-- we have to use markdown for blockquotes as github doesn't support them well in html -->
 > [!WARNING]
