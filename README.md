@@ -1,31 +1,34 @@
-<h1 align="left">Steel<br/><img src="./assets/img/logo/png/white-1080.png" alt="Logo" align="right" height="230px"></h1>
+<h1 align="left">Steel<br/><img src="./assets/img/banner/png/github-banner.png" alt="The Steel Project" align="center" height="230px"></h1>
 <p align="left">
     <img src="https://img.shields.io/badge/status-in_development-purple" alt="Status: In development">
     <img src="https://img.shields.io/badge/latest_version-0.7.0-yellow" alt="Latest: 0.7.0">
     <img src="https://img.shields.io/github/stars/swzldev/Steel" alt="Stars badge">
 </p>
+<p>This repository contains the main source code for Steel, including the compiler, standard library, and any related tools.</p>
 <p>Steel is a performant, compiled programming language that aims to wipe out all bugs at compile time, leaving your program error free and blazing fast.</p>
 
 <p>
-    <a href="#features">Features</a> &bull;
+    <a href="#why-steel">Why Steel?</a> &bull;
     <a href="#installation">Installation</a> &bull;
     <a href="#getting-started">Getting Started</a> &bull;
-    <a href="#changelog">Changelog</a> &bull;
-    <a href="#credits">Credits</a>
+    <a href="#license">License</a>
 </p>
 
-<!-- we have to use markdown here as github doesn't support styled html blockquotes -->
+<!-- we have to use markdown for blockquotes as github doesn't support them well in html -->
 > [!WARNING]
-> Steel is currently in pre-release, this means many features are not fully functional and may contain plenty of bugs, this version is not meant to be used for any real projects, everything is subject to change at any time.
+> Steel is currently in pre-release. All features may not fully functional and you may find plenty of bugs, this version is **not** meant to be used for any real projects, everything is subject to change at any time.
 
-<h2>Features</h2>
+<h2>Why Steel?</h2>
 <ul>
-    <li>Simple, clean, and easy to write syntax inspired by languages like C, Rust, Swift and more.</li>
-    <li>Informative diagnostics system to identify and fix code errors at the blink of an eye.</li>
-    <li>Full compilation to various targets & backends including LLVM for native codegen.</li>
-    <li>Project based build system with automatic dependancy management (WIP) and native linking.</li>
-    <li>Comprehensive documentation on all aspects of the language, including the compiler itself. (WIP)</li>
-    <li>VS Code extension for syntax highlighting and in-editor project management. (WIP)</li>
+    <li><strong>Efficiency:</strong> A clean, expressive syntax inspired by languages such as C, Rust, and Swift, designed to be intuitive and easy to write.</li>
+    
+    <li><strong>Reliability:</strong> A well-structured, multi-pass compiler combined with a robust diagnostics system ensures errors are detected as early and clearly as possible.</li>
+    
+    <li><strong>Compatibility:</strong> Support for multiple targets and backends, including LLVM (default) for native code generation, with seamless interoperability with languages like C.</li>
+    
+    <li><strong>Simplicity:</strong> A project-based build system with automatic dependency management (work in progress) and native linking support.</li>
+    
+    <li><strong>Support:</strong> Comprehensive documentation covering all aspects of the language, including the compiler itself (work in progress).</li>
 </ul>
 
 <h2>Installation</h2>
@@ -75,15 +78,6 @@ func main() -> int {
 > Relative paths are supported, so if you want to save time you can just run `steelc build .` if your terminal is already open in the project directory.
 
 <p>If everything builds successfully, you should now see a 'build' folder in your project directory. Open it up and run the executable inside, you should see "Hello, Steel!" displayed to the console.</p>
-
-<h2>Changelog</h2>
-<p>To view the full changelog, click <a href="./steelc/changelog.md">here</a>.</p>
-
-<h2>Credits</h2>
-<p>Developers:</p>
-<ul>
-    <li>swzldev</li>
-</ul>
 
 <h2>License</h2>
 <p>This project is currently liscensed under the MIT license. However, this code is not intended to be used outside of this project, and may require heavy changes if you intend to use it yourself.</p>
