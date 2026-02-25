@@ -1,12 +1,13 @@
 <h1 align="left">Steel<br/>
     <img src="./assets/img/banner/png/github-banner.png" alt="The Steel Project" align="center" height="230px">
-    <p>
-        <a href="#why-steel">Why Steel?</a> &bull;
-        <a href="#installation">Installation</a> &bull;
-        <a href="#getting-started">Getting Started</a> &bull;
-        <a href="#license">License</a>
-    </p>
 </h1>
+
+<p>
+    <a href="#why-steel">Why Steel?</a> &bull;
+    <a href="#installation">Installation</a> &bull;
+    <a href="#getting-started">Getting Started</a> &bull;
+    <a href="#license">License</a>
+</p>
 
 <p align="left">
     <img src="https://img.shields.io/badge/status-in_development-purple" alt="Status: In development">
@@ -23,13 +24,9 @@
 <h2>Why Steel?</h2>
 <ul>
     <li><strong>Efficiency:</strong> A clean, expressive syntax inspired by languages such as C, Rust, and Swift, designed to be intuitive and easy to write.</li>
-    
     <li><strong>Reliability:</strong> A well-structured, multi-pass compiler combined with a robust diagnostics system ensures errors are detected as early and clearly as possible.</li>
-    
     <li><strong>Compatibility:</strong> Support for multiple targets and backends, including LLVM (default) for native code generation, with seamless interoperability with languages like C.</li>
-    
     <li><strong>Simplicity:</strong> A project-based build system with automatic dependency management (work in progress) and native linking support.</li>
-    
     <li><strong>Support:</strong> Comprehensive documentation covering all aspects of the language, including the compiler itself (work in progress).</li>
 </ul>
 
