@@ -11,6 +11,8 @@
 [Why Steel?](#why-steel) | [Installation](#installation) | [Getting Started](#getting-started) | [License](#license)
 </div>
 
+<hr>
+
 <p align="left">
     <img src="https://img.shields.io/badge/status-in_development-purple" alt="Status: In development">
     <img src="https://img.shields.io/badge/latest_version-0.7.0-yellow" alt="Latest: 0.7.0">
