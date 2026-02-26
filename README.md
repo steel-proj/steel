@@ -1,13 +1,15 @@
-<h1 align="left">Steel<br/>
-    <img src="./assets/img/banner/png/github-banner.png" alt="The Steel Project" align="center" height="230px">
-</h1>
+<div align="center">
+    <picture>
+        <!-- for future proofing -->
+        <source media="(prefers-color-scheme: dark)" srcset="assets/img/banner/png/github-banner.png">
+        <source media="(prefers-color-scheme: light)" srcset="assets/img/banner/png/github-banner.png">
+        <img alt="The Steel Project"
+                src="assets/img/banner/png/github-banner.png"
+                width="50%">
+    </picture>
 
-<p>
-    <a href="#why-steel">Why Steel?</a> &bull;
-    <a href="#installation">Installation</a> &bull;
-    <a href="#getting-started">Getting Started</a> &bull;
-    <a href="#license">License</a>
-</p>
+[Why Steel?](#why-steel) | [Installation](#installation) | [Getting Started](#getting-started) | [License](#license)
+</div>
 
 <p align="left">
     <img src="https://img.shields.io/badge/status-in_development-purple" alt="Status: In development">
