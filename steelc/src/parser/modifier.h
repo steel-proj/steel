@@ -13,6 +13,6 @@ enum modifier_kind {
 typedef unsigned int modifier_flags;
 
 struct modifier {
-	modifier_kind kind;
+	modifier_kind kind = MOD_NONE;
 	token tk; // (for diagnostics)
 };
