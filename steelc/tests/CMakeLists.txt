@@ -1,4 +1,6 @@
 # steelc/tests/CMakeLists.txt
+cmake_minimum_required(VERSION 3.20)
+project(steelc_tests LANGUAGES CXX)
 
 add_executable(steelc_tests
 	"tests_main.cpp"
@@ -11,11 +13,6 @@ add_executable(steelc_tests
 
 	# lexer_tests/
 	"lexer_tests/lexer_tests.cpp"	
-)
-
-target_include_directories(steelc_core
-PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
 target_link_libraries(steelc_tests PRIVATE
