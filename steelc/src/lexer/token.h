@@ -25,7 +25,7 @@ struct code_span {
 };
 
 struct token {
+	token_type type = TT_UNKNOWN;
 	std::string value;
-	token_type type;
 	code_span span;
 };
