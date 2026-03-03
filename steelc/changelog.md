@@ -1,5 +1,12 @@
 # STEELC CHANGELOG
 
+## [Unreleased]
+### Added
+- 
+### Changed
+### Fixed
+### Removed
+
 ## [0.7.0]
 ### Added
 - Added a basic test suite (currently it's not very comprehensive but will be expanded over time to cover more and more of the compiler).
