@@ -30,7 +30,7 @@ void flow_analyzer::visit(std::shared_ptr<function_declaration> func) {
 	if (!current_returns && !func->return_type->is_void()) {
 		ERROR(ERR_NOT_ALL_PATHS_RETURN_VALUE, func->span);
 		if (current_conditionally_returns) {
-			ADVISE(ADV_CONDITIONAL_NOT_GUARANTEED_TO_RETURN);
+			ADVISE(ADV_CONDITIONAL_NOT_GUARANTEED_TO_RETURN, func->span);
 		}
 	}
 
