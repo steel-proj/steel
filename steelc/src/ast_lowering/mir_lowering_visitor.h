@@ -79,5 +79,6 @@ private:
 	mir_operand get_local(const std::string& name);
 	void update_local(const std::string& name, mir_operand value);
 
+	mir_operand cast_operand_if_needed(const mir_operand& operand, const mir_type& desired_type);
 	mir_instr_opcode get_operator_opcode(token_type op);
 };

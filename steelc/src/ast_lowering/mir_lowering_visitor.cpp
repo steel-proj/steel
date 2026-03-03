@@ -52,6 +52,12 @@ void mir_lowering_visitor::visit(std::shared_ptr<binary_expression> expr) {
 	mir_operand left_op = accept(expr->left);
 	mir_operand right_op = accept(expr->right);
 
+	mir_type target_type = mir_type{ expr->type() };
+
+	// cast operands if needed
+	left_op = cast_operand_if_needed(left_op, target_type);
+	right_op = cast_operand_if_needed(right_op, target_type);
+
 	// build the binary instruction
 	mir_operand bin_result = builder.build_binary_op(
 		get_operator_opcode(expr->oparator),
@@ -439,6 +445,18 @@ void mir_lowering_visitor::update_local(const std::string& name, mir_operand val
 		}
 	}
 	throw std::runtime_error("Local variable '" + name + "' not found in any scope");
+}
+
+mir_operand mir_lowering_visitor::cast_operand_if_needed(const mir_operand& operand, const mir_type& desired_type) {
+	if (operand_type(operand) == desired_type) {
+		return operand;
+	}
+	
+	// build cast instruction
+	return builder.build_cast(
+		operand,
+		desired_type
+	);
 }
 
 mir_instr_opcode mir_lowering_visitor::get_operator_opcode(token_type op) {
