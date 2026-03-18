@@ -2,16 +2,22 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
 #include <representations/types/type_utils.h>
+#include <utils/iclonable.h>
 
 class address_of_expression : public expression, public std::enable_shared_from_this<address_of_expression> {
 public:
-	ENABLE_ACCEPT(address_of_expression)
+	ENABLE_ACCEPT_AST(address_of_expression)
+	ENABLE_CLONE(address_of_expression, ast_node)
 
-	address_of_expression(std::shared_ptr<expression> value)
-		: value(value) {
+public:
+	address_of_expression() = default;
+	address_of_expression(std::unique_ptr<expression> value)
+		: value(std::move(value)) {
 	}
 
 	std::string string(int indent) const override {
@@ -19,14 +25,6 @@ public:
 		std::string result = ind + "Address Of Expression:\n";
 		result += ind + " Value:\n" + value->string(indent + 1) + "\n";
 		return result;
-	}
-
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<address_of_expression>(
-			std::dynamic_pointer_cast<expression>(value->clone())
-		);
-		cloned->span = span;
-		return cloned;
 	}
 
 	type_ptr type() const override {
@@ -39,5 +37,12 @@ public:
 		return false;
 	}
 
-	std::shared_ptr<expression> value;
+	std::unique_ptr<expression> value;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		address_of_expression& addr_target = ast_cast<address_of_expression&>(target);
+		addr_target.value = ast_cast<expression>(value->clone());
+	}
 };

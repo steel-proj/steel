@@ -30,21 +30,21 @@ bool llvm_native_writer::write_object(std::vector<uint8_t>& output_buffer) {
     InitializeAllAsmPrinters();
 
     // setup target
-    Triple triple(target.stringify());
-    module->setTargetTriple(triple);
+	const std::string tri_str = _target.stringify();
+    _module->setTargetTriple(tri_str);
 
     std::string err;
-    const Target* target = TargetRegistry::lookupTarget(triple, error);
-    if (!target) {
+    const Target* tar = TargetRegistry::lookupTarget(tri_str, error);
+    if (!tar) {
         error = err;
         return false;
     }
 
     TargetOptions opts;
     std::unique_ptr<TargetMachine> tm(
-        target->createTargetMachine(
-            triple,
-            cpu,
+        tar->createTargetMachine(
+            tri_str,
+            _cpu,
             "", // no feature support for now
             opts,
             std::nullopt
@@ -55,7 +55,7 @@ bool llvm_native_writer::write_object(std::vector<uint8_t>& output_buffer) {
         return false;
     }
 
-    module->setDataLayout(tm->createDataLayout());
+    _module->setDataLayout(tm->createDataLayout());
 
     // Emit object file to memory buffer
     SmallVector<char, 0> buffer;
@@ -67,7 +67,7 @@ bool llvm_native_writer::write_object(std::vector<uint8_t>& output_buffer) {
 		return false;
     }
 
-    pm.run(*module);
+    pm.run(*_module);
 
     output_buffer.assign(buffer.begin(), buffer.end());
     return true;

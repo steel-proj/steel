@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <sys/host_defs.h>
+#include <sys/env.h>
 
 #if defined(STEELC_PLATFORM_WINDOWS)
 #include <Windows.h>
@@ -16,57 +17,43 @@
 
 namespace fs = std::filesystem;
 
-static std::vector<std::string> get_path_entries() {
-    const char* path = std::getenv("PATH");
-    if (!path) return {};
+namespace {
 #if defined(STEELC_PLATFORM_WINDOWS)
-    const char delim = ';';
-#else
-    const char delim = ':';
-#endif
-    std::vector<std::string> entries;
-    std::stringstream ss(path);
-    std::string dir;
-    while (std::getline(ss, dir, delim)) {
-        if (!dir.empty()) entries.push_back(dir);
-    }
-    return entries;
-}
-
-#if defined(STEELC_PLATFORM_WINDOWS)
-static std::vector<std::string> get_pathexts() {
-    const char* pathext = std::getenv("PATHEXT");
-    // default common PATHEXT if env not set
-    std::string exts = pathext ? pathext : ".COM;.EXE;.BAT;.CMD";
-    std::vector<std::string> out;
-    std::stringstream ss(exts);
-    std::string ext;
-    while (std::getline(ss, ext, ';')) {
-        if (!ext.empty()) {
-            // normalize to upper to avoid mismatches
-            std::transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
-            out.push_back(ext);
+    std::vector<std::string> get_pathexts() {
+        std::string pathext;
+        if (!sys::env::get_var("PATHEXT", pathext)) {
+            pathext = ".COM;.EXE;.BAT;.CMD"; // default if env var not set
         }
+        std::vector<std::string> out;
+        std::stringstream ss(pathext);
+        std::string ext;
+        while (std::getline(ss, ext, ';')) {
+            if (!ext.empty()) {
+                // normalize to upper to avoid mismatches
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
+                out.push_back(ext);
+            }
+        }
+        return out;
     }
-    return out;
-}
 #endif
 
-static bool is_executable(const fs::path& p) {
-    if (!fs::exists(p) || !fs::is_regular_file(p)) return false;
+    bool is_executable(const fs::path& p) {
+        if (!fs::exists(p) || !fs::is_regular_file(p)) return false;
 #if defined(STEELC_PLATFORM_WINDOWS)
-    return true;
+        return true;
 #else
-    std::error_code ec;
-    auto perms = fs::status(p, ec).permissions();
-    if (ec) return false;
-    using fs::perms;
-    return (perms & (perms::owner_exec | perms::group_exec | perms::others_exec)) != perms::none;
+        std::error_code ec;
+        auto perms = fs::status(p, ec).permissions();
+        if (ec) return false;
+        using fs::perms;
+        return (perms & (perms::owner_exec | perms::group_exec | perms::others_exec)) != perms::none;
 #endif
+    }
 }
 
 std::unique_ptr<system_linker> system_linker::probe(const std::vector<std::string>& candidates) {
-    auto path_entries = get_path_entries();
+    const auto& path_entries = sys::env::get_path_entries();
     if (path_entries.empty()) {
         return nullptr;
     }

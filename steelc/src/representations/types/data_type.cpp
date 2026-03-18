@@ -9,60 +9,60 @@
 #include <representations/types/function_type.h>
 #include <representations/types/type_utils.h>
 
-type_ptr data_type::get(data_type_kind primitive) {
+data_type* data_type::get(data_type_kind primitive) {
 	return std::make_shared<data_type>(primitive);
 }
 
-type_ptr data_type::UNKNOWN = std::make_shared<data_type>(DT_UNKNOWN);
+data_type* data_type::UNKNOWN = std::make_unique<data_type>(DT_UNKNOWN);
 
-bool data_type::operator==(const type_ptr& other) const {
-	if (primitive != other->primitive) {
+bool data_type::operator==(const data_type& other) const {
+	if (primitive != other.primitive) {
 		return false;
 	}
 	// TODO: account for generics + mods
 	return true;
 }
-bool data_type::operator!=(const type_ptr& other) const {
+bool data_type::operator!=(const data_type& other) const {
 	return !(*this == other);
 }
 
-std::shared_ptr<custom_type> data_type::as_custom() {
+custom_type* data_type::as_custom() {
 	if (is_custom()) {
-		return std::dynamic_pointer_cast<custom_type>(shared_from_this());
+		return static_cast<custom_type*>(this);
 	}
 	return nullptr;
 }
-std::shared_ptr<array_type> data_type::as_array() {
+array_type* data_type::as_array() {
 	if (is_array()) {
-		return std::dynamic_pointer_cast<array_type>(shared_from_this());
+		return static_cast<array_type*>(this);
 	}
 	return nullptr;
 }
-std::shared_ptr<pointer_type> data_type::as_pointer() {
+pointer_type* data_type::as_pointer() {
 	if (is_pointer()) {
-		return std::dynamic_pointer_cast<pointer_type>(shared_from_this());
+		return static_cast<pointer_type*>(this);
 	}
 	return nullptr;
 }
-std::shared_ptr<data_type> data_type::as_reference() {
+data_type* data_type::as_reference() {
 	// TEMPORARY
 	return nullptr;
 }
-std::shared_ptr<enum_type> data_type::as_enum() {
+enum_type* data_type::as_enum() {
 	if (is_enum()) {
-		return std::dynamic_pointer_cast<enum_type>(shared_from_this());
+		return static_cast<enum_type*>(this);
 	}
 	return nullptr;	
 }
-std::shared_ptr<generic_type> data_type::as_generic() {
+generic_type* data_type::as_generic() {
 	if (is_generic()) {
-		return std::dynamic_pointer_cast<generic_type>(shared_from_this());
+		return static_cast<generic_type*>(this);
 	}
 	return nullptr;
 }
-std::shared_ptr<function_type> data_type::as_function() {
+function_type* data_type::as_function() {
 	if (is_function()) {
-		return std::dynamic_pointer_cast<function_type>(shared_from_this());
+		return static_cast<function_type*>(this);
 	}
 	return nullptr;
 }

@@ -10,7 +10,7 @@
 
 std::unique_ptr<stproj_file> stproj_file::load(const std::string& path) {
 	auto proj = std::unique_ptr<stproj_file>(new stproj_file());
-	proj->path = std::filesystem::path(path);
+	proj->_path = std::filesystem::path(path);
 
 	if (!std::filesystem::exists(path)) {
 		throw bad_stproj_exception("Steel project file does not exist at path: " + path);
@@ -42,25 +42,25 @@ std::unique_ptr<stproj_file> stproj_file::load(const std::string& path) {
 	}
 
 	if (auto deps = file["dependencies"].as_table()) {
-		for (const auto& [name, path] : *deps) {
-			if (path.is_string()) {
-				proj->dependencies.push_back({ std::string(name.str()), path.as_string()->get() });
+		for (const auto& [dname, dpath] : *deps) {
+			if (dpath.is_string()) {
+				proj->dependencies.push_back({ std::string(dname.str()), dpath.as_string()->get() });
 			}
 		}
 	}
 	return proj;
 }
-void stproj_file::save(const std::string& path) {
+void stproj_file::save(const std::string&) {
 }
 
 std::filesystem::path stproj_file::filename() const {
-	return path.filename();
+	return _path.filename();
 }
 std::filesystem::path stproj_file::filename_no_extension() const {
 	return filename().stem();
 }
 std::filesystem::path stproj_file::parent_path() const {
-	return path.parent_path();
+	return _path.parent_path();
 }
 
 const std::string stproj_file::require_string(const std::string& key, const toml::table& table) {

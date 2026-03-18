@@ -2,25 +2,30 @@
 
 #include <string>
 #include <memory>
-#include <iostream>
+#include <utility>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
 #include <ast/declarations/function_declaration.h>
 #include <ast/declarations/type_declaration.h>
 #include <representations/types/types_fwd.h>
+#include <utils/iclonable.h>
 
 class function_call : public expression, public std::enable_shared_from_this<function_call> {
 public:
-	ENABLE_ACCEPT(function_call)
+	ENABLE_ACCEPT_AST(function_call)
+	ENABLE_CLONE(function_call, ast_node)
 
-	function_call(std::string function_name, std::vector<std::shared_ptr<expression>> args)
-		: identifier(function_name), args(args), declaration(nullptr) {
+public:
+	function_call() = default;
+	function_call(std::string function_name, std::vector<std::unique_ptr<expression>> args)
+		: identifier(function_name), args(std::move(args)), declaration(nullptr) {
 	}
-	function_call(std::shared_ptr<expression> callee, std::string name, std::vector<std::shared_ptr<expression>> args)
-		: identifier(name), callee(callee), args(args), declaration(nullptr) {
+	function_call(std::unique_ptr<expression> callee, std::string name, std::vector<std::unique_ptr<expression>> args)
+		: identifier(name), callee(std::move(callee)), args(std::move(args)), declaration(nullptr) {
 	}
-	function_call(std::shared_ptr<expression> callee, std::vector<std::shared_ptr<expression>> args)
-		: identifier(""), callee(callee), args(args), declaration(nullptr) {
+	function_call(std::unique_ptr<expression> callee, std::vector<std::unique_ptr<expression>> args)
+		: identifier(""), callee(std::move(callee)), args(std::move(args)), declaration(nullptr) {
 	}
 
 	std::string string(int indent) const override {
@@ -36,24 +41,6 @@ public:
 			}
 		}
 		return result;
-	}
-
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<function_call>(
-			identifier,
-			std::vector<std::shared_ptr<expression>>{}
-		);
-		cloned->span = span;
-		if (callee) {
-			cloned->callee = std::dynamic_pointer_cast<expression>(callee->clone());
-		}
-		for (const auto& arg : args) {
-			cloned->args.push_back(std::dynamic_pointer_cast<expression>(arg->clone()));
-		}
-		cloned->declaration = declaration;
-		cloned->generic_args = generic_args;
-		cloned->ctor_type = ctor_type;
-		return cloned;
 	}
 
 	type_ptr type() const override {
@@ -83,12 +70,34 @@ public:
 	}
 
 	std::string identifier;
-	std::shared_ptr<expression> scope;
-	std::shared_ptr<expression> callee;
-	std::vector<std::shared_ptr<expression>> args;
-	std::vector<std::shared_ptr<function_declaration>> declaration_candidates;
-	std::shared_ptr<function_declaration> declaration;
+	std::unique_ptr<expression> scope;
+	std::unique_ptr<expression> callee;
+	std::vector<std::unique_ptr<expression>> args;
+	std::vector<function_declaration*> declaration_candidates;
+	function_declaration* declaration;
 	std::vector<type_ptr> generic_args;
-	std::shared_ptr<type_declaration> ctor_type = nullptr;
+	type_declaration* ctor_type = nullptr;
 	bool is_constructor = false;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		function_call& call_target = ast_cast<function_call&>(target);
+		call_target.identifier = identifier;
+		if (scope) {
+			call_target.scope = ast_cast<expression>(scope->clone());
+		}
+		if (callee) {
+			call_target.callee = ast_cast<expression>(callee->clone());
+		}
+		for (const auto& arg : args) {
+			call_target.args.emplace_back(
+				ast_cast<expression>(arg->clone()));
+		}
+		call_target.declaration_candidates = declaration_candidates;
+		call_target.declaration = declaration;
+		call_target.generic_args = generic_args;
+		call_target.ctor_type = ctor_type;
+		call_target.is_constructor = is_constructor;
+	}
 };

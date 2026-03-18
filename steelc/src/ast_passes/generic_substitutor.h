@@ -2,36 +2,38 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include <ast/ast_visitor.h>
 #include <ast/ast_fwd.h>
-#include <compiler/compilation_pass.h>
 #include <representations/types/types_fwd.h>
 
-class generic_substitutor : public ast_visitor, public compilation_pass {
+struct compilation_ctx;
+
+class generic_substitutor : public ast_visitor {
 public:
-	generic_substitutor(std::shared_ptr<compilation_unit> unit, std::vector<type_ptr> substitution_list)
-		: compilation_pass(unit), substitution_list(substitution_list) {
+	generic_substitutor(std::vector<type_ptr> substitution_list)
+		: substitution_list(substitution_list) {
 	}
 
-	void visit(std::shared_ptr<function_declaration> func) override;
-	void visit(std::shared_ptr<variable_declaration> var) override;
-	void visit(std::shared_ptr<type_declaration> decl) override;
-	void visit(std::shared_ptr<binary_expression> expr) override;
-	void visit(std::shared_ptr<assignment_expression> expr) override;
-	void visit(std::shared_ptr<address_of_expression> expr) override;
-	void visit(std::shared_ptr<deref_expression> expr) override;
-	void visit(std::shared_ptr<unary_expression> expr) override;
-	void visit(std::shared_ptr<index_expression> expr) override;
-	void visit(std::shared_ptr<cast_expression> expr) override;
-	void visit(std::shared_ptr<member_expression> expr) override;
-	void visit(std::shared_ptr<initializer_list> init) override;
-	void visit(std::shared_ptr<function_call> func_call) override;
-	void visit(std::shared_ptr<if_statement> if_stmt) override;
-	void visit(std::shared_ptr<inline_if> inline_if) override;
-	void visit(std::shared_ptr<for_loop> for_loop) override;
-	void visit(std::shared_ptr<while_loop> while_loop) override;
-	void visit(std::shared_ptr<return_statement> ret_stmt) override;
+	void visit(function_declaration& func) override;
+	void visit(variable_declaration& var) override;
+	void visit(type_declaration& decl) override;
+	void visit(binary_expression& expr) override;
+	void visit(assignment_expression& expr) override;
+	void visit(address_of_expression& expr) override;
+	void visit(deref_expression& expr) override;
+	void visit(unary_expression& expr) override;
+	void visit(index_expression& expr) override;
+	void visit(cast_expression& expr) override;
+	void visit(member_expression& expr) override;
+	void visit(initializer_list& init) override;
+	void visit(function_call& func_call) override;
+	void visit(if_statement& if_stmt) override;
+	void visit(inline_if& inline_if) override;
+	void visit(for_loop& for_loop) override;
+	void visit(while_loop& while_loop) override;
+	void visit(return_statement& ret_stmt) override;
 
 private:
 	std::vector<type_ptr> substitution_list;

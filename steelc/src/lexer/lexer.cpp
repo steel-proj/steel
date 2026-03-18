@@ -125,7 +125,7 @@ std::vector<token> lexer::tokenize() {
 		}
 
 		// check for operators
-		token_type op = get_op(source, i);
+		token_type op = get_op(source, (int)i);
 		if (op != TT_UNKNOWN) {
 			if (!word.empty()) {
 				add_token(word);
@@ -365,8 +365,8 @@ void lexer::add_token(const std::string& value, token_type type) {
 	position start = { line, column - value.length() };
 	position end = { line, column - 1 }; // end is the last character not the one after
 
-	tokens.push_back({ value, type, code_span(start, end) });
+	tokens.push_back({ type, value, code_span(start, end) });
 }
 void lexer::add_token(const std::string& value, token_type type, position start, position end) {
-	tokens.push_back({ value, type, code_span(start, end) });
+	tokens.push_back({ type, value, code_span(start, end) });
 }

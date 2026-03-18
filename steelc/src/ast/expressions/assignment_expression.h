@@ -2,15 +2,21 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
+#include <utils/iclonable.h>
 
 class assignment_expression : public expression, public std::enable_shared_from_this<assignment_expression> {
 public:
-	ENABLE_ACCEPT(assignment_expression)
+	ENABLE_ACCEPT_AST(assignment_expression)
+	ENABLE_CLONE(assignment_expression, ast_node)
 
-	assignment_expression(std::shared_ptr<expression> left, std::shared_ptr<expression> right)
-		: left(left), right(right) {
+public:
+	assignment_expression() = default;
+	assignment_expression(std::unique_ptr<expression> left, std::unique_ptr<expression> right)
+		: left(std::move(left)), right(std::move(right)) {
 	}
 
 	std::string string(int indent) const override {
@@ -19,15 +25,6 @@ public:
 		result += ind + " Assignee:\n" + left->string(indent + 1) + "\n";
 		result += ind + " Value:\n" + right->string(indent + 1) + "\n";
 		return result;
-	}
-
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<assignment_expression>(
-			std::dynamic_pointer_cast<expression>(left->clone()),
-			std::dynamic_pointer_cast<expression>(right->clone())
-		);
-		cloned->span = span;
-		return cloned;
 	}
 
 	type_ptr type() const override {
@@ -40,6 +37,14 @@ public:
 		return false;
 	}
 
-	std::shared_ptr<expression> left;
-	std::shared_ptr<expression> right;
+	std::unique_ptr<expression> left;
+	std::unique_ptr<expression> right;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		assignment_expression& assign_target = ast_cast<assignment_expression&>(target);
+		assign_target.left = ast_cast<expression>(left->clone());
+		assign_target.right = ast_cast<expression>(right->clone());
+	}
 };

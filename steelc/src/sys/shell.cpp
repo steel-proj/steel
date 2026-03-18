@@ -8,10 +8,10 @@
 
 #include <sys/host_defs.h>
 
-int shell::exec(const std::string& command) {
+int sys::shell::exec(const std::string& command) {
 	return std::system(command.c_str());
 }
-std::string shell::exec_piped(const std::string& command) {
+std::string sys::shell::exec_piped(const std::string& command) {
 	std::array<char, 4096> buffer{};
 	std::string result;
 

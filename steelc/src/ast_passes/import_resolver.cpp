@@ -5,18 +5,29 @@
 #include <ast/ast_node.h>
 #include <ast/compilation_unit.h>
 #include <ast/statements/import_statement.h>
-#include <error/compilation_error_catalog.h>
+#include <diagnostics/compilation_diagnostic_catalog.h>
 #include <symbolics/import_table.h>
+#include <error/internal.h>
 
-void import_resolver::visit(std::shared_ptr<import_statement> import_stmt) {
+void import_resolver::visit(compilation_unit& unit) {
+	current_unit = unit.get();
+	for (auto& decl : unit.declarations) {
+		decl->accept(*this);
+	}
+	current_unit = nullptr;
+}
+
+void import_resolver::visit(import_statement& import_stmt) {
 	// find the module
-	auto module = module_manager.get_module(import_stmt->module_path);
+	auto module = module_manager.get_module(import_stmt.module_path);
 	if (module == nullptr) {
-		std::string full_name = module_manager::module_path_to_full_name(import_stmt->module_path);
-		ERROR(ERR_MODULE_NOT_FOUND, import_stmt->span, full_name.c_str());
+		std::string full_name = module_manager::module_path_to_full_name(import_stmt.module_path);
+		ERROR(ERR_MODULE_NOT_FOUND, import_stmt.span, full_name.c_str());
 		return;
 	}
 
 	// insert the module into the compilation units import table (file wide)
-	unit->import_tbl.add_import(module);
+	s_assert(current_unit != nullptr,
+		"Import statement outside of unit!");
+	current_unit->import_tbl.add_import(module);
 }

@@ -11,7 +11,7 @@
 #include <ast_lowering/mir_lowering_visitor.h>
 #include <representations/entities/module_entity.h>
 
-std::vector<std::unique_ptr<mir_module>> mir_lowerer::lower_all(const std::vector<std::shared_ptr<compilation_unit>>& units) {
+std::vector<std::unique_ptr<mir_module>> mir_lowerer::lower_all(const std::vector<compilation_unit*>& units) {
 	lowered.clear();
 	func_map.clear();
 
@@ -30,7 +30,7 @@ std::vector<std::unique_ptr<mir_module>> mir_lowerer::lower_all(const std::vecto
 	}
 
 	for (auto& inst_func : inst_funcs) {
-		auto* mod = get_module(inst_func->owning_unit.lock());
+		auto* mod = get_module(inst_func->owning_unit);
 		declare_func(inst_func, mod);
 	}
 	for (auto& inst_func : inst_funcs) {
@@ -44,7 +44,7 @@ std::vector<std::unique_ptr<mir_module>> mir_lowerer::lower_all(const std::vecto
 	return out;
 }
 
-mir_module* mir_lowerer::get_module(const std::shared_ptr<compilation_unit>& unit) {
+mir_module* mir_lowerer::get_module(const compilation_unit* unit) {
 	if (lowered.find(unit->unit_id) != lowered.end()) {
 		return lowered[unit->unit_id].get();
 	}
@@ -58,7 +58,7 @@ mir_module* mir_lowerer::get_module(const std::shared_ptr<compilation_unit>& uni
 	return lowered[unit->unit_id].get();
 }
 
-void mir_lowerer::lower_functions(const std::vector<ast_ptr>& decls, mir_module* mm) {
+void mir_lowerer::lower_functions(const std::vector<ast_node*>& decls, mir_module* mm) {
 	std::vector<std::shared_ptr<function_declaration>> funcs;
 	collect_functions(decls, funcs);
 
@@ -75,7 +75,7 @@ void mir_lowerer::lower_functions(const std::vector<ast_ptr>& decls, mir_module*
 		define_func(func);
 	}
 }
-void mir_lowerer::collect_functions(const std::vector<ast_ptr>& decls, std::vector<std::shared_ptr<function_declaration>>& out) {
+void mir_lowerer::collect_functions(const std::vector<ast_node*>& decls, std::vector<std::shared_ptr<function_declaration>>& out) {
 	for (auto& decl : decls) {
 		if (auto mod = ast_ptr_cast<module_declaration>(decl)) {
 			collect_functions(mod->declarations, out);

@@ -2,17 +2,23 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
 #include <parser/parser_utils.h>
 #include <representations/types/types_fwd.h>
+#include <utils/iclonable.h>
 
 class initializer_list : public expression, public std::enable_shared_from_this<initializer_list> {
 public:
-	ENABLE_ACCEPT(initializer_list)
+	ENABLE_ACCEPT_AST(initializer_list)
+	ENABLE_CLONE(initializer_list, ast_node)
 
-	initializer_list(std::vector<std::shared_ptr<expression>> args)
-		: values(args) {
+public:
+	initializer_list() = default;
+	initializer_list(std::vector<std::unique_ptr<expression>> args)
+		: values(std::move(args)) {
 	}
 
 	std::string string(int indent) const override {
@@ -28,17 +34,6 @@ public:
 			}
 		}
 		return result;
-	}
-
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<initializer_list>(std::vector<std::shared_ptr<expression>>{});
-		cloned->span = span;
-		for (const auto& val : values) {
-			cloned->values.push_back(std::dynamic_pointer_cast<expression>(val->clone()));
-		}
-		cloned->result_type = result_type;
-		cloned->is_array_initializer = is_array_initializer;
-		return cloned;
 	}
 
 	type_ptr type() const override {
@@ -58,7 +53,19 @@ public:
 		return true;
 	}
 
-	std::vector<std::shared_ptr<expression>> values;
+	std::vector<std::unique_ptr<expression>> values;
 	type_ptr result_type;
 	bool is_array_initializer = false;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		initializer_list& init_target = ast_cast<initializer_list&>(target);
+		init_target.values.clear();
+		for (const auto& val : values) {
+			init_target.values.push_back(ast_cast<expression>(val->clone()));
+		}
+		init_target.result_type = result_type;
+		init_target.is_array_initializer = is_array_initializer;
+	}
 };

@@ -8,107 +8,107 @@
 #include <representations/types/core.h>
 #include <representations/types/type_utils.h>
 
-void generic_substitutor::visit(std::shared_ptr<function_declaration> func) {
-	for (auto& param : func->parameters) {
+void generic_substitutor::visit(function_declaration& func) {
+	for (auto& param : func.parameters) {
 		param->accept(*this);
 	}
-	if (func->return_type) {
-		try_substitute(func->return_type);
+	if (func.return_type) {
+		try_substitute(func.return_type);
 	}
-	if (func->body) {
-		func->body->accept(*this);
-	}
-}
-void generic_substitutor::visit(std::shared_ptr<variable_declaration> var) {
-	try_substitute(var->type);
-	if (var->has_initializer()) {
-		var->initializer->accept(*this);
+	if (func.body) {
+		func.body->accept(*this);
 	}
 }
-void generic_substitutor::visit(std::shared_ptr<type_declaration> decl) {
-	for (const auto& ctor : decl->constructors) {
+void generic_substitutor::visit(variable_declaration& var) {
+	try_substitute(var.type);
+	if (var.has_initializer()) {
+		var.initializer->accept(*this);
+	}
+}
+void generic_substitutor::visit(type_declaration& decl) {
+	for (const auto& ctor : decl.constructors) {
 		ctor->accept(*this);
 	}
-	for (const auto& field : decl->fields) {
+	for (const auto& field : decl.fields) {
 		field->accept(*this);
 	}
-	for (const auto& method : decl->methods) {
+	for (const auto& method : decl.methods) {
 		method->accept(*this);
 	}
-	for (const auto& op : decl->operators) {
+	for (const auto& op : decl.operators) {
 		op->accept(*this);
 	}
 }
-void generic_substitutor::visit(std::shared_ptr<binary_expression> expr) {
-	expr->left->accept(*this);
-	expr->right->accept(*this);
+void generic_substitutor::visit(binary_expression& expr) {
+	expr.left->accept(*this);
+	expr.right->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<assignment_expression> expr) {
-	expr->left->accept(*this);
-	expr->right->accept(*this);
+void generic_substitutor::visit(assignment_expression& expr) {
+	expr.left->accept(*this);
+	expr.right->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<address_of_expression> expr) {
-	expr->value->accept(*this);
+void generic_substitutor::visit(address_of_expression& expr) {
+	expr.value->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<deref_expression> expr) {
-	expr->value->accept(*this);
+void generic_substitutor::visit(deref_expression& expr) {
+	expr.value->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<unary_expression> expr) {
-	expr->operand->accept(*this);
+void generic_substitutor::visit(unary_expression& expr) {
+	expr.operand->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<index_expression> expr) {
-	expr->base->accept(*this);
-	expr->indexer->accept(*this);
+void generic_substitutor::visit(index_expression& expr) {
+	expr.base->accept(*this);
+	expr.indexer->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<cast_expression> expr) {
-	expr->expr->accept(*this);
+void generic_substitutor::visit(cast_expression& expr) {
+	expr.expr->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<member_expression> expr) {
-	expr->object->accept(*this);
+void generic_substitutor::visit(member_expression& expr) {
+	expr.object->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<initializer_list> init) {
-	for (const auto& value : init->values) {
+void generic_substitutor::visit(initializer_list& init) {
+	for (const auto& value : init.values) {
 		value->accept(*this);
 	}
 }
-void generic_substitutor::visit(std::shared_ptr<function_call> func_call) {
-	for (const auto& arg : func_call->args) {
+void generic_substitutor::visit(function_call& func_call) {
+	for (const auto& arg : func_call.args) {
 		arg->accept(*this);
 	}
 }
-void generic_substitutor::visit(std::shared_ptr<if_statement> if_stmt) {
-	if_stmt->condition->accept(*this);
-	if_stmt->then_block->accept(*this);
-	if (if_stmt->else_node) {
-		if_stmt->else_node->accept(*this);
+void generic_substitutor::visit(if_statement& if_stmt) {
+	if_stmt.condition->accept(*this);
+	if_stmt.then_block->accept(*this);
+	if (if_stmt.else_node) {
+		if_stmt.else_node->accept(*this);
 	}
 }
-void generic_substitutor::visit(std::shared_ptr<inline_if> inline_if) {
-	inline_if->condition->accept(*this);
-	inline_if->statement->accept(*this);
+void generic_substitutor::visit(inline_if& inline_if) {
+	inline_if.condition->accept(*this);
+	inline_if.statement->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<for_loop> for_loop) {
-	if (for_loop->initializer) {
-		for_loop->initializer->accept(*this);
+void generic_substitutor::visit(for_loop& for_loop) {
+	if (for_loop.initializer) {
+		for_loop.initializer->accept(*this);
 	}
-	if (for_loop->condition) {
-		for_loop->condition->accept(*this);
+	if (for_loop.condition) {
+		for_loop.condition->accept(*this);
 	}
-	if (for_loop->increment) {
-		for_loop->increment->accept(*this);
+	if (for_loop.increment) {
+		for_loop.increment->accept(*this);
 	}
-	for_loop->body->accept(*this);
+	for_loop.body->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<while_loop> while_loop) {
-	while_loop->condition->accept(*this);
-	while_loop->body->accept(*this);
+void generic_substitutor::visit(while_loop& while_loop) {
+	while_loop.condition->accept(*this);
+	while_loop.body->accept(*this);
 }
-void generic_substitutor::visit(std::shared_ptr<return_statement> ret) {
-	if (ret->is_conditional()) {
-		ret->condition->accept(*this);
+void generic_substitutor::visit(return_statement& ret) {
+	if (ret.is_conditional()) {
+		ret.condition->accept(*this);
 	}
-	if (ret->value) {
-		ret->value->accept(*this);
+	if (ret.value) {
+		ret.value->accept(*this);
 	}
 }
 

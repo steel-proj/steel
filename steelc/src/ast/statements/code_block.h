@@ -4,13 +4,16 @@
 #include <vector>
 
 #include <ast/ast_node.h>
+#include <ast/ast_visitor.h>
+#include <utils/iclonable.h>
 
 class code_block : public ast_node, public std::enable_shared_from_this<code_block> {
 public:
-	ENABLE_ACCEPT(code_block)
+	ENABLE_ACCEPT_AST(code_block)
+	ENABLE_CLONE(code_block, ast_node)
 
-	code_block() {
-	}
+public:
+	code_block() = default;
 
 	std::string string(int indent) const override {
 		std::string ind = indent_s(indent);
@@ -27,16 +30,16 @@ public:
 		return result;
 	}
 
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<code_block>();
-		cloned->span = span;
-		cloned->is_body = is_body;
-		for (const auto& stmt : body) {
-			cloned->body.push_back(stmt->clone());
-		}
-		return cloned;
-	}
-
-	std::vector<ast_ptr> body;
+	std::vector<std::unique_ptr<ast_node>> body;
 	bool is_body = false;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		ast_node::clone_into(target);
+		code_block& block_target = ast_cast<code_block&>(target);
+		for (const auto& stmt : body) {
+			block_target.body.push_back(stmt->clone());
+		}
+		block_target.is_body = is_body;
+	}
 };

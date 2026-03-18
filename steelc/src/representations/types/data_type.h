@@ -3,13 +3,14 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <cstdint>
 
 #include <lexer/token.h>
 #include <parser/modifier.h>
 #include <utils/iclonable.h>
 #include <representations/types/types_fwd.h>
 
-enum data_type_kind {
+enum data_type_kind : uint32_t {
 	DT_UNKNOWN,
 	DT_CUSTOM,
 	DT_ENUM,
@@ -42,34 +43,24 @@ enum data_type_kind {
 	DT_GENERIC,
 };
 
-class data_type : public iclonable<data_type>, public std::enable_shared_from_this<data_type> {
+class data_type {
 public:
-	data_type()
-		: primitive(DT_UNKNOWN), modifiers(0) {
-	}
-	data_type(data_type_kind primitive)
-		: primitive(primitive), modifiers(0) {
-	}
+	static data_type* UNKNOWN;
+	static data_type* NULL_TYPE;
 
-	// static method to get primitive data type as a type_ptr
-	static type_ptr get(data_type_kind primitive);
-
-	static type_ptr UNKNOWN;
-	static type_ptr NULL_TYPE;
-
-	virtual bool operator==(const type_ptr& other) const;
-	bool operator!=(const type_ptr& other) const;
+	virtual bool operator==(const data_type& other) const;
+	bool operator!=(const data_type& other) const;
 
 	inline bool is_unknown() const {
-		return primitive == DT_UNKNOWN;
+		return _primitive == DT_UNKNOWN;
 	}
 	inline bool is_void() const {
-		return primitive == DT_VOID;
+		return _primitive == DT_VOID;
 	}
 	// i16, i32, i64 (unsigned types are not supported yet)
 	inline bool is_integer() const {
-		return primitive == DT_I16 || primitive == DT_I32 || primitive == DT_I64
-			|| primitive == DT_U16 || primitive == DT_U32 || primitive == DT_U64;
+		return _primitive == DT_I16 || _primitive == DT_I32 || _primitive == DT_I64
+			|| _primitive == DT_U16 || _primitive == DT_U32 || _primitive == DT_U64;
 	}
 	// integer, enum, char, bool
 	inline bool is_integral() const {
@@ -77,7 +68,7 @@ public:
 	}
 	// float, double
 	inline bool is_floating_point() const {
-		return primitive == DT_FLOAT || primitive == DT_DOUBLE;
+		return _primitive == DT_FLOAT || _primitive == DT_DOUBLE;
 	}
 	// integer or floating point (NOT integral)
 	inline bool is_numeric() const {
@@ -85,33 +76,33 @@ public:
 	}
 	// char, wchar
 	inline bool is_character() const {
-		return primitive == DT_CHAR || primitive == DT_WIDECHAR;
+		return _primitive == DT_CHAR || _primitive == DT_WIDECHAR;
 	}
 	// string, wstring
 	inline bool is_text() const {
-		return primitive == DT_STRING || primitive == DT_WIDESTRING;
+		return _primitive == DT_STRING || _primitive == DT_WIDESTRING;
 	}
 	inline bool is_bool() const {
-		return primitive == DT_BOOL;
+		return _primitive == DT_BOOL;
 	}
 	inline bool is_null() const {
-		return primitive == DT_NULL;
+		return _primitive == DT_NULL;
 	}
 
 	inline bool is_custom() const {
-		return primitive == DT_CUSTOM;
+		return _primitive == DT_CUSTOM;
 	}
 	inline bool is_array() const {
-		return primitive == DT_ARRAY;
+		return _primitive == DT_ARRAY;
 	}
 	inline bool is_pointer() const {
-		return primitive == DT_POINTER;
+		return _primitive == DT_POINTER;
 	}
 	inline bool is_reference() const {
-		return primitive == DT_REFERENCE;
+		return _primitive == DT_REFERENCE;
 	}
 	inline bool is_enum() const {
-		return primitive == DT_ENUM;
+		return _primitive == DT_ENUM;
 	}
 	inline bool is_generic() const {
 		// IMPORTANT!
@@ -119,13 +110,13 @@ public:
 		// NOT types with generic arguments
 		// to check if a type is a generic type instantiation you should
 		// use is_generic_instance()
-		return primitive == DT_GENERIC;
+		return _primitive == DT_GENERIC;
 	}
 	inline bool is_generic_instance() const {
 		return !generic_args.empty();
 	}
 	inline bool is_function() const {
-		return primitive == DT_FUNCTION;
+		return _primitive == DT_FUNCTION;
 	}
 
 	inline bool is_valid_object_type() const {
@@ -136,13 +127,13 @@ public:
 			|| is_enum();
 	}
 
-	std::shared_ptr<custom_type> as_custom();
-	std::shared_ptr<array_type> as_array();
-	std::shared_ptr<pointer_type> as_pointer();
-	std::shared_ptr<data_type> as_reference();
-	std::shared_ptr<enum_type> as_enum();
-	std::shared_ptr<generic_type> as_generic();
-	std::shared_ptr<function_type> as_function();
+	custom_type* as_custom();
+	array_type* as_array();
+	pointer_type* as_pointer();
+	data_type* as_reference();
+	enum_type* as_enum();
+	generic_type* as_generic();
+	function_type* as_function();
 
 	virtual bool is_primitive() const;
 	virtual bool is_indexable() const;
@@ -151,10 +142,17 @@ public:
 
 	virtual std::string name() const;
 
-	virtual std::shared_ptr<data_type> clone() const override;
-
-	data_type_kind primitive; 
 	std::vector<modifier> modifiers;
-	std::vector<type_ptr> generic_args;
+	std::vector<data_type*> generic_args;
 	code_span span;
+
+protected:
+	data_type(data_type_kind primitive)
+		: _primitive(primitive) {
+	}
+
+private:
+	friend class type_factory;
+
+	data_type_kind _primitive;
 };

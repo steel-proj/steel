@@ -37,7 +37,7 @@ private:
 	stproj_file(const stproj_file&) = delete;
 	stproj_file& operator=(const stproj_file&) = delete;
 
-	std::filesystem::path path;
+	std::filesystem::path _path;
 
 	static const std::string require_string(const std::string& key, const toml::table& table);
 };

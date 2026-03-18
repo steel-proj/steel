@@ -9,5 +9,3 @@ class enum_type;
 class enum_option_type;
 class generic_type;
 class function_type;
-
-using type_ptr = std::shared_ptr<data_type>;

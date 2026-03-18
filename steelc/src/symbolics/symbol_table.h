@@ -40,7 +40,7 @@ public:
 	void push_generic_scope();
 	void pop_generic_scope();
 
-	add_symbol_result add_symbol(entity_ptr entity, std::shared_ptr<type_entity> owner = nullptr);
+	add_symbol_result add_symbol(std::shared_ptr<entity> entity, std::shared_ptr<type_entity> owner = nullptr);
 	
 	// helper functions (automatically converts to entity)
 	

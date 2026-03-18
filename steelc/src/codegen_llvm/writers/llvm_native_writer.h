@@ -17,7 +17,7 @@
 class llvm_native_writer {
 public:
 	llvm_native_writer(llvm::Module* module, const target_triple& target, const std::string& cpu)
-		: module(module), target(target) {
+		: _module(module), _target(target), _cpu(cpu) {
 	}
 
 	bool write_object(std::vector<uint8_t>& output_buffer);
@@ -27,9 +27,9 @@ public:
 	}
 
 private:
-	llvm::Module* module;
-	target_triple target;
-	std::string cpu;
+	llvm::Module* _module;
+	target_triple _target;
+	std::string _cpu;
 
 	std::string error;
 };

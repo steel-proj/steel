@@ -32,14 +32,14 @@ llvm::Value* llvm_expression_builder::build_unary_expr(llvm::Type* expr_type, ll
 		return builder.CreateNot(operand);
 	case TT_INCREMENT: {
 		auto old = builder.CreateLoad(expr_type, operand, "old");
-		llvm::Value* one = llvm::ConstantInt::get(expr_type, 1);
+		llvm::Value* one = llvm::ConstantInt::get(expr_type, 1ULL);
 		auto inc = builder.CreateAdd(old, one, "inc");
 		builder.CreateStore(inc, operand);
 		return old;
 	}
 	case TT_DECREMENT: {
 		auto old = builder.CreateLoad(expr_type, operand, "old");
-		llvm::Value* one = llvm::ConstantInt::get(expr_type, -1);
+		llvm::Value* one = llvm::ConstantInt::getSigned(expr_type, -1LL);
 		auto inc = builder.CreateAdd(old, one, "inc");
 		builder.CreateStore(inc, operand);
 		return old;

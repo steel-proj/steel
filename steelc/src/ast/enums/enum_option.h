@@ -3,14 +3,19 @@
 #include <string>
 #include <memory>
 
-#include <ast/ast_node.h>
 #include <ast/ast_fwd.h>
+#include <ast/ast_node.h>
+#include <ast/ast_visitor.h>
 #include <representations/types/types_fwd.h>
+#include <utils/iclonable.h>
 
 class enum_option : public ast_node, public std::enable_shared_from_this<enum_option> {
 public:
-	ENABLE_ACCEPT(enum_option)
+	ENABLE_ACCEPT_AST(enum_option)
+	ENABLE_CLONE(enum_option, ast_node)
 
+public:
+	enum_option() = default;
 	enum_option(const std::string& identifier)
 		: identifier(identifier) {
 	}
@@ -29,13 +34,14 @@ public:
 		return identifier;
 	}
 
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<enum_option>(identifier);
-		cloned->span = span;
-		cloned->declaration = declaration;
-		return cloned;
-	}
-
 	std::string identifier;
-	std::shared_ptr<enum_declaration> declaration;
+	enum_declaration* declaration;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		ast_node::clone_into(target);
+		enum_option& option_target = ast_cast<enum_option&>(target);
+		option_target.identifier = identifier;
+		option_target.declaration = declaration;
+	}
 };

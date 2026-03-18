@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <lexer/token.h>
-#include <compiler/compilation_pass.h>
+#include <compiler/compilation_step.h>
 
 enum lexer_flag {
 	LF_NONE = 0,
@@ -13,10 +13,12 @@ enum lexer_flag {
 };
 typedef unsigned int lexer_flags;
 
-class lexer : public compilation_pass {
+struct compilation_ctx;
+
+class lexer : public compilation_step {
 public:
-	lexer(const std::string& source, std::shared_ptr<class compilation_unit> unit)
-		: source(source), compilation_pass(unit) {
+	lexer(compilation_ctx& ctx, const std::string& source)
+		: compilation_step(ctx), source(source) {
 	}
 
 	std::vector<token> tokenize();

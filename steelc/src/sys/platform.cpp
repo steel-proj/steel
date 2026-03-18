@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include <sys/host_defs.h>
+#include <error/internal.h>
 
 platform platform::host_platform() {
 #if defined(STEELC_ARCH_X64)
@@ -96,6 +97,7 @@ std::string platform::to_string(platform_arch arch) {
 			return pair.first;
 		}
 	}
+	s_unreachable("Exhaustive platform_arch");
 }
 std::string platform::to_string(platform_vendor vendor) {
 	if (vendor == platform_vendor::UNKNOWN) {
@@ -106,6 +108,7 @@ std::string platform::to_string(platform_vendor vendor) {
 			return pair.first;
 		}
 	}
+	s_unreachable("Exhaustive platform_vendor");
 }
 std::string platform::to_string(platform_os os) {
 	if (os == platform_os::UNKNOWN) {
@@ -116,6 +119,7 @@ std::string platform::to_string(platform_os os) {
 			return pair.first;
 		}
 	}
+	s_unreachable("Exhaustive platform_os");
 }
 std::string platform::to_string(platform_abi abi) {
 	if (abi == platform_abi::UNKNOWN) {
@@ -126,6 +130,7 @@ std::string platform::to_string(platform_abi abi) {
 			return pair.first;
 		}
 	}
+	s_unreachable("Exhaustive platform_abi");
 }
 
 platform_vendor platform::default_vendor_for_os(platform_os os) {

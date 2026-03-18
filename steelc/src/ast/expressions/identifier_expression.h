@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
 #include <representations/types/types_fwd.h>
 #include <representations/types/data_type.h>
@@ -11,13 +12,17 @@
 #include <representations/entities/entity_ref.h>
 #include <representations/entities/variable_entity.h>
 #include <symbolics/symbol_table.h>
+#include <utils/iclonable.h>
 
 struct module_info;
 
 class identifier_expression : public expression, public std::enable_shared_from_this<identifier_expression> {
 public:
-	ENABLE_ACCEPT(identifier_expression)
+	ENABLE_ACCEPT_AST(identifier_expression)
+	ENABLE_CLONE(identifier_expression, ast_node)
 
+public:
+	identifier_expression() = default;
 	identifier_expression(std::string identifier)
 		: identifier(identifier) {
 	}
@@ -26,10 +31,8 @@ public:
 		return indent_s(indent) + "Identifier \"" + identifier + "\"";
 	}
 
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<identifier_expression>(identifier);
-		cloned->span = span;
-		cloned->entity_ref = entity_ref;
+	std::unique_ptr<ast_node> clone() const override {
+		auto cloned = std::make_unique<identifier_expression>(identifier);
 		return cloned;
 	}
 
@@ -60,4 +63,12 @@ public:
 
 	std::string identifier;
 	entity_ref entity_ref;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		identifier_expression& id_target = ast_cast<identifier_expression&>(target);
+		id_target.identifier = identifier;
+		id_target.entity_ref = entity_ref;
+	}
 };

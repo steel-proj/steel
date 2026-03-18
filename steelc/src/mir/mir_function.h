@@ -85,7 +85,7 @@ public:
 	inline mir_block* at(int index) {
 		return blocks[index].get();
 	}
-	mir_block* add_block(const std::string& name = "");
+	mir_block* add_block(const std::string& block_name = "");
 	void add_block(std::unique_ptr<mir_block> block);
 
 	name_path name;

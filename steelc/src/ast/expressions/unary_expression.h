@@ -2,18 +2,24 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
 #include <lexer/token_type.h>
 #include <lexer/token_utils.h>
 #include <representations/types/types_fwd.h>
+#include <utils/iclonable.h>
 
 class unary_expression : public expression, public std::enable_shared_from_this<unary_expression> {
 public:
-	ENABLE_ACCEPT(unary_expression)
+	ENABLE_ACCEPT_AST(unary_expression)
+	ENABLE_CLONE(unary_expression, ast_node)
 
-	unary_expression(token_type op, std::shared_ptr<expression> operand)
-		: oparator(op), operand(operand) {
+public:
+	unary_expression() = default;
+	unary_expression(token_type op, std::unique_ptr<expression> operand)
+		: oparator(op), operand(std::move(operand)) {
 	}
 
 	std::string string(int indent) const override {
@@ -22,15 +28,6 @@ public:
 		result += ind + " Operand:\n" + operand->string(indent + 1) + "\n";
 		result += ind + " Operator: " + to_string(oparator) + "\n";
 		return result;
-	}
-
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<unary_expression>(
-			oparator,
-			std::dynamic_pointer_cast<expression>(operand->clone())
-		);
-		cloned->span = span;
-		return cloned;
 	}
 
 	type_ptr type() const override {
@@ -44,5 +41,13 @@ public:
 	}
 
 	token_type oparator;
-	std::shared_ptr<expression> operand;
+	std::unique_ptr<expression> operand;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		unary_expression& unary_target = ast_cast<unary_expression&>(target);
+		unary_target.oparator = oparator;
+		unary_target.operand = ast_cast<expression>(operand->clone());
+	}
 };

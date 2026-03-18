@@ -4,8 +4,17 @@
 
 #include <formatting/formatting.h>
 
-// This file contains internal error handling utilities for within
+// this file contains internal error handling utilities for within
 // the steel compiler.
+
+// compiler-specific unreachable hints
+#if defined(_MSC_VER)
+  #define COMPILER_UNREACHABLE_HINT() __assume(false)
+#elif defined(__GNUC__) || defined(__clang__)
+  #define COMPILER_UNREACHABLE_HINT() __builtin_unreachable()
+#else
+  #define COMPILER_UNREACHABLE_HINT() do { } while (0)
+#endif
 
 #define s_assert(expr, ...) \
     do { \
@@ -16,7 +25,13 @@
 
 #define s_fatal(message, ...) \
 	do { \
-		s_fatal_impl(__FILE__, __LINE__, __func__, ##__VA_ARGS__); \
+		s_fatal_impl(__FILE__, __LINE__, __func__, message, ##__VA_ARGS__); \
+	} while (0)
+
+#define s_unreachable(message, ...) \
+	do { \
+		s_fatal_impl(__FILE__, __LINE__, __func__, "s_unreachable was hit: " message, ##__VA_ARGS__); \
+		COMPILER_UNREACHABLE_HINT(); \
 	} while (0)
 
 enum internal_error_code {
@@ -41,7 +56,7 @@ template<typename... Args>
 	std::format_string<Args...> fmt,
 	Args&&... args
 ) {
-	auto message = formatting::format(fmt.get(), std::forward<Args>(args)...);
+	std::string message = formatting::format(fmt, std::forward<Args>(args)...);
 	s_assert_fail_base(expr_str, file, line, func, message);
 }
 
@@ -60,6 +75,6 @@ template<typename... Args>
 	std::format_string<Args...> fmt,
 	Args&&... args
 ) {
-	auto message = formatting::format(fmt.get(), std::forward<Args>(args)...);
+	std::string message = formatting::format(fmt, std::forward<Args>(args)...);
 	s_fatal_base(file, line, func, message);
 }

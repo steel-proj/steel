@@ -14,7 +14,7 @@
 #include <building/project_builder.h>
 #include <stproj/stproj_generator.h>
 
-bool steelc_commands_impl::help_command_handler(const command_flags& flags) {
+bool steelc_commands_impl::help_command_handler(const command_flags&) {
 	output::print(text_style().bold(), "Commands:\n");
 	output::print("steelc --help - Shows this help message.\n");
 	output::print("steelc --version - Displays the current version of steelc that is installed.\n");
@@ -22,7 +22,7 @@ bool steelc_commands_impl::help_command_handler(const command_flags& flags) {
 	output::print("steelc project <option> [<args>] - Project manipulation tools. Differs by <option>.\n");
 	return true;
 }
-bool steelc_commands_impl::version_command_handler(const command_flags& flags) {
+bool steelc_commands_impl::version_command_handler(const command_flags&) {
 	std::string sc_ver = STEELC_VERSION_STR;
 	output::print("steelc version: {}\n", "", sc_ver);
 	return true;
@@ -97,7 +97,7 @@ bool steelc_commands_impl::project_command_handler(const command_flags& flags) {
 
 	return false;
 }
-bool steelc_commands_impl::test_command_handler(const command_flags& flags) {
+bool steelc_commands_impl::test_command_handler(const command_flags&) {
 #if defined(STEELC_ENABLE_TESTS)
 	std::string command = "\"\"tests/steelc_tests\"\"";
 

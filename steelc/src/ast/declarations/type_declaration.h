@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+#include <ast/ast_fwd.h>
+#include <ast/ast_visitor.h>
 #include <ast/declarations/declaration.h>
 #include <ast/declarations/variable_declaration.h>
 #include <ast/declarations/function_declaration.h>
@@ -11,11 +13,15 @@
 #include <representations/types/types_fwd.h>
 #include <representations/types/custom_type.h>
 #include <representations/entities/type_entity.h>
+#include <utils/iclonable.h>
 
 class type_declaration : public declaration, public std::enable_shared_from_this<type_declaration> {
 public:
-	ENABLE_ACCEPT(type_declaration)
+	ENABLE_ACCEPT_AST(type_declaration)
+	ENABLE_CLONE(type_declaration, ast_node)
 
+public:
+	type_declaration() = default;
 	type_declaration(custom_type_type kind, const std::string& identifier)
 		: identifier(identifier), type_kind(kind) {
 	}
@@ -79,43 +85,45 @@ public:
 		return identifier;
 	}
 
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<type_declaration>(type_kind, identifier);
-		cloned->span = span;
-		cloned->owning_unit = owning_unit;
-		cloned->parent_module = parent_module;
-		cloned->base_types = base_types;
-		cloned->base_type = base_type;
-		for (const auto& gen : generics) {
-			cloned->generics.push_back(std::dynamic_pointer_cast<generic_parameter>(gen->clone()));
-		}
-		for (const auto& constructor : constructors) {
-			cloned->constructors.push_back(std::dynamic_pointer_cast<function_declaration>(constructor->clone()));
-		}
-		for (const auto& field : fields) {
-			cloned->fields.push_back(std::dynamic_pointer_cast<variable_declaration>(field->clone()));
-		}
-		for (const auto& method : methods) {
-			cloned->methods.push_back(std::dynamic_pointer_cast<function_declaration>(method->clone()));
-		}
-		for (const auto& op : operators) {
-			cloned->operators.push_back(std::dynamic_pointer_cast<operator_declaration>(op->clone()));
-		}
-		cloned->is_generic = is_generic;
-		cloned->is_generic_instance = is_generic_instance;
-		// do not clone cached entity
-		return cloned;
-	}
-
 	custom_type_type type_kind;
 	std::string identifier;
 	std::vector<type_ptr> base_types;
-	std::shared_ptr<type_declaration> base_type;
-	std::vector<std::shared_ptr<generic_parameter>> generics;
-	std::vector<std::shared_ptr<function_declaration>> constructors;
-	std::vector<std::shared_ptr<variable_declaration>> fields;
-	std::vector<std::shared_ptr<function_declaration>> methods;
-	std::vector<std::shared_ptr<operator_declaration>> operators;
+	type_declaration* base_type;
+	std::vector<std::unique_ptr<generic_parameter>> generics;
+	std::vector<std::unique_ptr<function_declaration>> constructors;
+	std::vector<std::unique_ptr<variable_declaration>> fields;
+	std::vector<std::unique_ptr<function_declaration>> methods;
+	std::vector<std::unique_ptr<operator_declaration>> operators;
 	bool is_generic = false;
 	bool is_generic_instance = false;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		// make sure to use ast_cast and clone for pointers
+
+		declaration::clone_into(target);
+		type_declaration& type_target = ast_cast<type_declaration&>(target);
+		type_target.type_kind = type_kind;
+		type_target.identifier = identifier;
+		for (const auto& gen : generics) {
+			type_target.generics.emplace_back(
+				ast_cast<generic_parameter>(gen->clone()));
+		}
+		for (const auto& constructor : constructors) {
+			type_target.constructors.emplace_back(
+				ast_cast<function_declaration>(constructor->clone()));
+		}
+		for (const auto& field : fields) {
+			type_target.fields.emplace_back(
+				ast_cast<variable_declaration>(field->clone()));
+		}
+		for (const auto& method : methods) {
+			type_target.methods.emplace_back(
+				ast_cast<function_declaration>(method->clone()));
+		}
+		for (const auto& op : operators) {
+			type_target.operators.emplace_back(
+				ast_cast<operator_declaration>(op->clone()));
+		}
+	}
 };

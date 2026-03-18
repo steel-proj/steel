@@ -2,16 +2,22 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
 #include <ast/ast_node.h>
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
+#include <utils/iclonable.h>
 
 class for_loop : public ast_node, public std::enable_shared_from_this<for_loop> {
 public:
-	ENABLE_ACCEPT(for_loop)
+	ENABLE_ACCEPT_AST(for_loop)
+	ENABLE_CLONE(for_loop, ast_node)
 
-	for_loop(ast_ptr initializer, std::shared_ptr<expression> condition, std::shared_ptr<expression> increment, ast_ptr body)
-		: initializer(initializer), condition(condition), increment(increment), body(body) {
+public:
+	for_loop() = default;
+	for_loop(std::unique_ptr<ast_node> initializer, std::unique_ptr<expression> condition, std::unique_ptr<ast_node> increment, std::unique_ptr<ast_node> body)
+		: initializer(std::move(initializer)), condition(std::move(condition)), increment(std::move(increment)), body(std::move(body)) {
 	}
 
 	std::string string(int indent) const override {
@@ -48,19 +54,26 @@ public:
 		return result;
 	}
 
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<for_loop>(
-			initializer->clone(),
-			std::dynamic_pointer_cast<expression>(condition->clone()),
-			std::dynamic_pointer_cast<expression>(increment->clone()),
-			body->clone()
-		);
-		cloned->span = span;
-		return cloned;
-	}
+	std::unique_ptr<ast_node> initializer;
+	std::unique_ptr<expression> condition;
+	std::unique_ptr<ast_node> increment;
+	std::unique_ptr<ast_node> body;
 
-	ast_ptr initializer;
-	std::shared_ptr<expression> condition;
-	std::shared_ptr<expression> increment;
-	ast_ptr body;
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		ast_node::clone_into(target);
+		for_loop& loop_target = ast_cast<for_loop&>(target);
+		if (initializer) {
+			loop_target.initializer = initializer->clone();
+		}
+		if (condition) {
+			loop_target.condition = ast_cast<expression>(condition->clone());
+		}
+		if (increment) {
+			loop_target.increment = increment->clone();
+		}
+		if (body) {
+			loop_target.body = body->clone();
+		}
+	}
 };

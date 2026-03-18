@@ -19,6 +19,6 @@ public:
 
 	lookup_result lookup(const std::string& name, const std::shared_ptr<type_entity>& type = nullptr) const;
 
-	std::shared_ptr<module_entity> current_module;
-	std::shared_ptr<import_table> import_tbl;
+	module_entity* current_module;
+	import_table* import_tbl;
 };

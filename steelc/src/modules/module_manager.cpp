@@ -9,12 +9,12 @@
 
 module_manager::module_manager() {
 	auto info = create_info("<global module>");
-	global_module = module_entity::get(info);
+	_global_module = module_entity::get(info);
 	// dont register as an actual module
 	// we dont want to be able to look it up by name
 }
 
-std::shared_ptr<module_entity> module_manager::add_module(const std::string& name, std::shared_ptr<module_entity> parent) {
+module_entity* module_manager::add_module(const std::string& name, module_entity* parent) {
 	// identify full name
 	std::string full_name;
 	if (parent && !parent->is_global()) {
@@ -26,7 +26,7 @@ std::shared_ptr<module_entity> module_manager::add_module(const std::string& nam
 	}
 
 	if (parent == nullptr) {
-		parent = global_module;
+		parent = _global_module.get();
 	}
 
 	// create module
@@ -34,34 +34,34 @@ std::shared_ptr<module_entity> module_manager::add_module(const std::string& nam
 	auto module = module_entity::get(info, parent);
 
 	// register module
-	modules[full_name] = module;
+	_modules[full_name] = std::move(module);
 
-	return module;
+	return _modules[full_name].get();
 }
 
 inline bool module_manager::has_module(const std::vector<std::string>& name_path) const {
 	std::string full_name = module_path_to_full_name(name_path);
-	for (const auto& mod : modules) {
+	for (const auto& mod : _modules) {
 		if (mod.first == full_name) {
 			return true;
 		}
 	}
 	return false;
 }
-std::shared_ptr<module_entity> module_manager::get_module(const std::vector<std::string>& name_path) {
+module_entity* module_manager::get_module(const std::vector<std::string>& name_path) {
 	std::string full_name = module_path_to_full_name(name_path);
-	for (const auto& mod : modules) {
+	for (const auto& mod : _modules) {
 		if (mod.first == full_name) {
-			return mod.second;
+			return mod.second.get();
 		}
 	}
 	return nullptr;
 }
-std::shared_ptr<module_entity> module_manager::get_global_module() {
-	return global_module;
+module_entity* module_manager::get_parent(std::shared_ptr<module_entity> module) {
+	return module->parent_module ? module->parent_module : _global_module.get();
 }
-std::shared_ptr<module_entity> module_manager::get_parent(std::shared_ptr<module_entity> module) {
-	return module->parent_module ? module->parent_module : global_module;
+module_entity* module_manager::get_global_module() {
+	return _global_module.get();
 }
 
 std::string module_manager::module_path_to_full_name(const std::vector<std::string>& name_path) {

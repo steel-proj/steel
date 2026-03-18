@@ -14,7 +14,7 @@ bool pointer_type::operator==(const type_ptr& other) const {
 	return false;
 }
 
-bool generic_type::operator==(const type_ptr& other) const {
+bool generic_type::operator==(const type_ptr&) const {
 	// this always returns false as no comparison between
 	// two generic types should never occur
 	return false;

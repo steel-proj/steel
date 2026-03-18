@@ -185,7 +185,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<literal> literal) {
 				mir_type{ ty }
 			);
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception&) {
 			s_assert(false, "Invalid integer literal value: {}", literal->value);
 		}
 	}
@@ -197,7 +197,7 @@ void mir_lowering_visitor::visit(std::shared_ptr<literal> literal) {
 				mir_type{ ty }
 			);
 		}
-		catch (const std::exception& e) {
+		catch (const std::exception&) {
 			s_assert(false, "Invalid floating-point literal value: {}", literal->value);
 		}
 	}
@@ -417,8 +417,9 @@ void mir_lowering_visitor::visit(std::shared_ptr<return_statement> ret_stmt) {
 	// continue building in don't return block
 	builder.set_insert_block(dont_block);
 }
-void mir_lowering_visitor::visit(std::shared_ptr<break_statement> brk_stmt) {
-	s_assert(loop_hlper.in_loop(), "Break statement not within a loop");
+void mir_lowering_visitor::visit(std::shared_ptr<break_statement>) {
+	s_assert(loop_hlper.in_loop(),
+		"Break statement not within a loop");
 
 	auto ctx = loop_hlper.current_loop();
 	builder.build_branch(ctx->merge_block);

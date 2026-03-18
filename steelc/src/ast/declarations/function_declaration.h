@@ -2,24 +2,32 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 
+#include <ast/ast_fwd.h>
+#include <ast/ast_utils.h>
+#include <ast/ast_visitor.h>
 #include <ast/declarations/declaration.h>
 #include <ast/declarations/variable_declaration.h>
 #include <ast/generics/generic_parameter.h>
 #include <representations/types/types_fwd.h>
 #include <representations/types/function_type.h>
 #include <representations/entities/entity_ref.h>
+#include <utils/iclonable.h>
+#include <error/internal.h>
 
 class function_declaration : public declaration, public std::enable_shared_from_this<function_declaration> {
 public:
-	ENABLE_ACCEPT(function_declaration)
+	ENABLE_ACCEPT_AST(function_declaration)
+	ENABLE_CLONE(function_declaration, ast_node)
 
+public:
 	function_declaration() = default;
-	function_declaration(type_ptr return_type, std::string identifier, std::vector<std::shared_ptr<variable_declaration>> parameters)
-		: return_type(return_type), identifier(identifier), parameters(parameters), body(nullptr) /* for built in functions */ {
+	function_declaration(type_ptr return_type, std::string identifier, std::vector<std::unique_ptr<variable_declaration>> parameters)
+		: return_type(return_type), identifier(identifier), parameters(std::move(parameters)), body(nullptr) /* for built in functions */ {
 	}
-	function_declaration(type_ptr return_type, std::string identifier, std::vector<std::shared_ptr<variable_declaration>> parameters, ast_ptr body, bool is_override)
-		: return_type(return_type), identifier(identifier), parameters(parameters), body(body), is_override(is_override) {
+	function_declaration(type_ptr return_type, std::string identifier, std::vector<std::unique_ptr<variable_declaration>> parameters, std::unique_ptr<ast_node> body, bool is_override)
+		: return_type(return_type), identifier(identifier), parameters(std::move(parameters)), body(std::move(body)), is_override(is_override) {
 	}
 
 	std::string string(int indent) const override {
@@ -62,41 +70,11 @@ public:
 		return expected_types;
 	}
 
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<function_declaration>();
-		cloned->span = span;
-		cloned->owning_unit = owning_unit;
-		cloned->parent_module = parent_module;
-		cloned->return_type = return_type;
-		cloned->identifier = identifier;
-		for (const auto& gen : generics) {
-			cloned->generics.push_back(std::dynamic_pointer_cast<generic_parameter>(gen->clone()));
-		}
-		for (const auto& param : parameters) {
-			cloned->parameters.push_back(std::dynamic_pointer_cast<variable_declaration>(param->clone()));
-		}
-		if (body) {
-			cloned->body = body->clone();
-		}
-		cloned->is_method = is_method;
-		cloned->is_generic = is_generic;
-		cloned->is_override = is_override;
-		cloned->is_constructor = is_constructor;
-		cloned->is_generic_instance = is_generic_instance;
-		cloned->overridden_function = overridden_function;
-		cloned->is_entry_point = false; // entry point status is not cloned
-		cloned->implicitly_returns = implicitly_returns;
-		cloned->no_mangle = no_mangle;
-		// note: overridden_function is not cloned
-		// dont clone ref
-		return cloned;
-	}
-
 	type_ptr return_type;
 	std::string identifier;
-	std::vector<std::shared_ptr<generic_parameter>> generics;
-	std::vector<std::shared_ptr<variable_declaration>> parameters;
-	ast_ptr body;
+	std::vector<std::unique_ptr<generic_parameter>> generics;
+	std::vector<std::unique_ptr<variable_declaration>> parameters;
+	std::unique_ptr<ast_node> body;
 	bool is_method = false;
 	bool is_generic = false;
 	bool is_override = false;
@@ -106,7 +84,35 @@ public:
 	bool implicitly_returns = false;
 	bool no_mangle = false;
 	std::vector<type_ptr> generic_args; // if applicable
-	std::shared_ptr<type_declaration> parent_type = nullptr;
-	std::shared_ptr<function_declaration> overridden_function = nullptr;
+	type_declaration* parent_type = nullptr;
+	function_declaration* overridden_function = nullptr;
 	entity_ref func_ref;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		declaration::clone_into(target);
+		function_declaration& func_target = ast_cast<function_declaration&>(target);
+		func_target.return_type = return_type;
+		func_target.identifier = identifier;
+		for (const auto& gen : generics) {
+			func_target.generics.emplace_back(
+				ast_cast<generic_parameter>(gen->clone()));
+		}
+		for (const auto& param : parameters) {
+			func_target.parameters.emplace_back(
+				ast_cast<variable_declaration>(param->clone()));
+		}
+		if (body) {
+			func_target.body = body->clone();
+		}
+		func_target.is_method = is_method;
+		func_target.is_generic = is_generic;
+		func_target.is_override = is_override;
+		func_target.is_constructor = is_constructor;
+		func_target.is_generic_instance = is_generic_instance;
+		func_target.is_entry_point = is_entry_point;
+		func_target.implicitly_returns = implicitly_returns;
+		func_target.no_mangle = no_mangle;
+		func_target.generic_args = generic_args;
+	}
 };

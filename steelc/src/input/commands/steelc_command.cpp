@@ -31,9 +31,9 @@ bool steelc_command::execute(const console_args& args) const {
 
 	return handler(flags);
 
-	if (flags.has("--verbose")) { // TODO: reimplement this
-		//output::set_log_verbosity(LOG_VERBOSITY_NORMAL);
-	}
+	/*if (flags.has("--verbose")) { // TODO: reimplement this
+		output::set_log_verbosity(LOG_VERBOSITY_NORMAL);
+	}*/
 }
 
 bool steelc_command::parse_args(const console_args& args, command_flags& out_flags) const {

@@ -12,9 +12,8 @@
 #include <lexer/token_type.h>
 #include <lexer/token.h>
 #include <parser/parser_utils.h>
-#include <compiler/compilation_pass.h>
 #include <steelc/language_constants.h>
-#include <error/compilation_error_catalog.h>
+#include <diagnostics/compilation_diagnostic_catalog.h>
 #include <representations/types/types_fwd.h>
 #include <representations/types/data_type.h>
 #include <representations/types/custom_type.h>
@@ -29,26 +28,26 @@
 #include <symbolics/symbol_table.h>
 #include <symbolics/overlay_table.h>
 
-void type_checker::visit(std::shared_ptr<function_declaration> func) {
-	if (func->is_generic && !func->is_generic_instance) {
+void type_checker::visit(function_declaration& func) {
+	if (func.is_generic && !func.is_generic_instance) {
 		return;
 	}
 
-	check_type(func->return_type);
-	for (const auto& param : func->parameters) {
+	check_type(func.return_type);
+	for (const auto& param : func.parameters) {
 		check_type(param->type);
 	}
 
 	if (is_valid_entry_point(func)) {
 		// check for entry point overloads
-		if (ctx.module_manager.entry_point) {
-			ERROR(ERR_ENTRY_OVERLOADED, func->span, language_constants::ENTRY_POINT);
+		if (_ctx.module_manager.entry_point) {
+			ERROR(ERR_ENTRY_OVERLOADED, func.span, language_constants::ENTRY_POINT);
 			return;
 		}
 		else {
-			ctx.module_manager.entry_point = func;
-			func->is_entry_point = true;
-			func->no_mangle = true; // dont mangle entry point
+			_ctx.module_manager.entry_point = func;
+			func.is_entry_point = true;
+			func.no_mangle = true; // dont mangle entry point
 		}
 	}
 	else {
@@ -57,60 +56,60 @@ void type_checker::visit(std::shared_ptr<function_declaration> func) {
 	}
 
 	current_function = func;
-	if (func->body) {
-		func->body->accept(*this);
+	if (func.body) {
+		func.body->accept(*this);
 	}
 	current_function = nullptr;
 }
-void type_checker::visit(std::shared_ptr<variable_declaration> var) {
-	if (var->type != data_type::UNKNOWN) {
+void type_checker::visit(variable_declaration& var) {
+	if (var.type != data_type::UNKNOWN) {
 		// only try and unbox for explicitly typed variables
-		check_type(var->type);
+		check_type(var.type);
 	}
 
 	// accept initializer early to prevent double visits
-	if (var->has_initializer()) {
-		var->initializer->accept(*this);
+	if (var.has_initializer()) {
+		var.initializer->accept(*this);
 	}
 
 	// set variable type if UNKNOWN
-	if (var->type == data_type::UNKNOWN) {
-		if (var->has_initializer()) {
-			auto init_type = resolve_expr_type(var->initializer);
+	if (var.type == data_type::UNKNOWN) {
+		if (var.has_initializer()) {
+			auto init_type = resolve_expr_type(var.initializer);
 			if (init_type == data_type::UNKNOWN) {
-				ERROR(ERR_CANNOT_INFER_TYPE_UNKNOWN_INIT, var->span, var->identifier.c_str());
+				ERROR(ERR_CANNOT_INFER_TYPE_UNKNOWN_INIT, var.span, var.identifier.c_str());
 				return;
 			}
 			else if (init_type->is_null()) {
-				ERROR(ERR_CANNOT_INFER_TYPE_NULL_INIT, var->span, var->identifier.c_str());
+				ERROR(ERR_CANNOT_INFER_TYPE_NULL_INIT, var.span, var.identifier.c_str());
 				return;
 			}
-			var->type = resolve_expr_type(var->initializer);
+			var.type = resolve_expr_type(var.initializer);
 		}
 		else {
-			ERROR(ERR_CANNOT_INFER_TYPE_NO_INIT, var->span, var->identifier.c_str());
+			ERROR(ERR_CANNOT_INFER_TYPE_NO_INIT, var.span, var.identifier.c_str());
 			return;
 		}
 	}
 	else {
 		// if variable type is custom, ensure it is defined
-		if (auto custom = var->type->as_custom()) {
+		if (auto custom = var.type->as_custom()) {
 			if (!custom->declaration) {
-				ERROR(ERR_TYPE_NOT_DEFINED, var->span, custom->name().c_str());
+				ERROR(ERR_TYPE_NOT_DEFINED, var.span, custom->name().c_str());
 				return;
 			}
 		}
 	}
 	// ensure initializer is valid
-	if (var->has_initializer()) {
-		if (auto init_list = std::dynamic_pointer_cast<initializer_list>(var->initializer)) {
+	if (var.has_initializer()) {
+		if (auto init_list = std::dynamic_pointer_cast<initializer_list>(var.initializer)) {
 			if (init_list->is_array_initializer) {
-				if (!var->type->as_array()) {
-					ERROR(ERR_INVALID_ARRAY_INITIALIZER_USAGE, var->span);
+				if (!var.type->as_array()) {
+					ERROR(ERR_INVALID_ARRAY_INITIALIZER_USAGE, var.span);
 					return;
 				}
 			}
-			else if (auto custom = var->type->as_custom()) {
+			else if (auto custom = var.type->as_custom()) {
 				// struct/class
 				if (custom->declaration->type_kind == CT_STRUCT || custom->declaration->type_kind == CT_CLASS) {
 					if (init_list->values.size() > custom->declaration->fields.size()) {
@@ -130,61 +129,61 @@ void type_checker::visit(std::shared_ptr<variable_declaration> var) {
 				}
 				// interface
 				else {
-					ERROR(ERR_INTERFACE_INITIALIZER, var->span);
+					ERROR(ERR_INTERFACE_INITIALIZER, var.span);
 					return;
 				}
 				// set result type (assuming no errors)
-				init_list->result_type = var->type;
+				init_list->result_type = var.type;
 			}
 			else {
-				ERROR(ERR_INVALID_INITIALIZER_LIST_USAGE, var->span);
+				ERROR(ERR_INVALID_INITIALIZER_LIST_USAGE, var.span);
 				return;
 			}
 		}
 		// standard variable assignment
 		else {
-			auto& var_type = var->type;
-			auto init_type = resolve_expr_type(var->initializer);
+			auto& var_type = var.type;
+			auto init_type = resolve_expr_type(var.initializer);
 			if (init_type == data_type::UNKNOWN) {
-				return; // might change this later
-				ERROR(ERR_CANNOT_INFER_TYPE_UNKNOWN_INIT, var->span, var->identifier.c_str());
+				// might change this later
+				//ERROR(ERR_CANNOT_INFER_TYPE_UNKNOWN_INIT, var->span, var->identifier.c_str());
 				return;
 			}
-			if (*var_type != init_type && !is_valid_conversion(init_type, var_type, true, var->initializer->span)) {
-				ERROR(ERR_TYPE_ASSIGNMENT_MISMATCH, var->span, var->type->name().c_str(), resolve_expr_type(var->initializer)->name().c_str());
+			if (*var_type != init_type && !is_valid_conversion(init_type, var_type, true, var.initializer->span)) {
+				ERROR(ERR_TYPE_ASSIGNMENT_MISMATCH, var.span, var.type->name().c_str(), resolve_expr_type(var.initializer)->name().c_str());
 				return;
 			}
 		}
 	}
 }
-void type_checker::visit(std::shared_ptr<type_declaration> decl) {
-	if (decl->is_generic && !decl->is_generic_instance) {
+void type_checker::visit(type_declaration& decl) {
+	if (decl.is_generic && !decl.is_generic_instance) {
 		return;
 	}
 
-	std::unordered_map<std::shared_ptr<function_declaration>, bool> interface_funcs;
+	std::unordered_map<function_declaration*, bool> interface_funcs;
 	size_t implemented_interface_count = 0;
-	if (decl->type_kind == CT_CLASS) {
+	if (decl.type_kind == CT_CLASS) {
 		bool first = true;
 		bool derives_class = false;
-		for (const auto& base : decl->base_types) {
+		for (const auto& base : decl.base_types) {
 			if (auto custom = base->as_custom()) {
 				if (custom->declaration->type_kind == CT_CLASS) {
 					if (derives_class) {
-						ERROR(ERR_MULTIPLE_BASE_CLASSES, decl->span);
+						ERROR(ERR_MULTIPLE_BASE_CLASSES, decl.span);
 						return;
 					}
 					if (!first) {
-						ERROR(ERR_BASE_CLASS_NOT_FIRST, decl->span, base->name());
+						ERROR(ERR_BASE_CLASS_NOT_FIRST, decl.span, base->name());
 						return;
 					}
-					decl->base_type = custom->declaration;
+					decl.base_type = custom->declaration;
 					derives_class = true;
 				}
 				else if (custom->declaration->type_kind == CT_INTERFACE) {
 					// add all interface methods to map
 					for (const auto& method : custom->declaration->methods) {
-						interface_funcs[method] = false;
+						interface_funcs[method.get()] = false;
 					}
 				}
 			}
@@ -194,11 +193,11 @@ void type_checker::visit(std::shared_ptr<type_declaration> decl) {
 		// check for a circular inheritance chain
 		std::unordered_set<std::string> visited;
 		std::string chain;
-		std::shared_ptr<const type_declaration> current = decl;
+		type_declaration* current = &decl;
 		while (current) {
 			chain += current->identifier;
 			if (visited.count(current->identifier)) {
-				ERROR(ERR_CIRCULAR_INHERITANCE, decl->span, decl->name().c_str(), chain.c_str());
+				ERROR(ERR_CIRCULAR_INHERITANCE, decl.span, decl.name().c_str(), chain.c_str());
 				return;
 			}
 			if (current->base_type) chain += " -> ";
@@ -207,23 +206,23 @@ void type_checker::visit(std::shared_ptr<type_declaration> decl) {
 		}
 	}
 
-	for (const auto& constructor : decl->constructors) {
+	for (const auto& constructor : decl.constructors) {
 		constructor->accept(*this);
 	}
-	for (const auto& member : decl->fields) {
+	for (const auto& member : decl.fields) {
 		member->accept(*this);
 		// cannot contain fields of own type
 		if (auto custom = member->type->as_custom()) {
 			// should be okay, but i should note its generally
 			// not safe to compare pointers like this
-			if (custom->declaration == decl) {
-				ERROR(ERR_FIELD_CANNOT_BE_OWN_TYPE, member->span, member->identifier.c_str(), decl->identifier.c_str());
-				ADVISE(ADV_USE_POINTER_INSTEAD_OF_OWN_TYPE, member->span, decl->identifier.c_str());
+			if (custom->declaration == &decl) {
+				ERROR(ERR_FIELD_CANNOT_BE_OWN_TYPE, member->span, member->identifier.c_str(), decl.identifier.c_str());
+				HINT(HINT_USE_POINTER_INSTEAD_OF_OWN_TYPE, decl.identifier.c_str());
 				return;
 			}
 		}
 	}
-	for (const auto& method : decl->methods) {
+	for (const auto& method : decl.methods) {
 		// check method
 		if (method->is_override) {
 			bool found = false;
@@ -256,54 +255,54 @@ void type_checker::visit(std::shared_ptr<type_declaration> decl) {
 		method->accept(*this);
 
 		// methods in interfaces should have no body
-		if (decl->type_kind == CT_INTERFACE && method->body) {
+		if (decl.type_kind == CT_INTERFACE && method->body) {
 			ERROR(ERR_INTERFACE_METHOD_HAS_BODY, method->span);
 			return;
 		}
 	}
-	for (const auto& op : decl->operators) {
+	for (const auto& op : decl.operators) {
 		op->accept(*this);
 	}
 
 	// ensure all interface methods are implemented
-	if (decl->type_kind == CT_CLASS) {
+	if (decl.type_kind == CT_CLASS) {
 		if (implemented_interface_count < interface_funcs.size()) {
-			ERROR(ERR_NOT_ALL_INTERFACE_METHODS_IMPLEMENTED, decl->span, decl->identifier.c_str(), implemented_interface_count, interface_funcs.size());
+			ERROR(ERR_NOT_ALL_INTERFACE_METHODS_IMPLEMENTED, decl.span, decl.identifier.c_str(), implemented_interface_count, interface_funcs.size());
 		}
 		for (const auto& iface_method : interface_funcs) {
 			if (!iface_method.second) {
-				ADVISE(ADV_IMPLEMENT_INTERFACE_METHOD, decl->span, iface_method.first->identifier);
+				HINT(HINT_IMPLEMENT_INTERFACE_METHOD, iface_method.first->identifier);
 			}
 		}
 	}
 }
-void type_checker::visit(std::shared_ptr<module_declaration> module) {
+void type_checker::visit(module_declaration& module) {
 	// mostly for updating the current symbol table
 	auto old_symbols = active_symbols;
-	active_symbols = &module->entity->symbols();
-	for (const auto& decl : module->declarations) {
+	active_symbols = &module.entity->symbols();
+	for (const auto& decl : module.declarations) {
 		decl->accept(*this);
 	}
 	active_symbols = old_symbols;
 }
-void type_checker::visit(std::shared_ptr<binary_expression> expr) {
-	expr->left->accept(*this);
-	expr->right->accept(*this);
+void type_checker::visit(binary_expression& expr) {
+	expr.left->accept(*this);
+	expr.right->accept(*this);
 
 	type_ptr lty = nullptr;
 	type_ptr rty = nullptr;
 
-	auto left_entity = expr->left->entity(*active_symbols);
-	auto right_entity = expr->right->entity(*active_symbols);
+	auto left_entity = expr.left->entity(*active_symbols);
+	auto right_entity = expr.right->entity(*active_symbols);
 	if (left_entity == entity::UNRESOLVED || right_entity == entity::UNRESOLVED) {
 		// cannot resolve one of the entities, skip further checks
 		return;
 	}
 
 	if (left_entity == nullptr) {
-		lty = resolve_expr_type(expr->left);
+		lty = resolve_expr_type(*expr.left);
 		if (!lty) {
-			ERROR(ERR_INTERNAL_ERROR, expr->left->span, "Type Checker", "LHS of binary expression has no type or entity");
+			ERROR(ERR_INTERNAL_ERROR, expr.left->span, "Type Checker", "LHS of binary expression has no type or entity");
 			return;
 		}
 	}
@@ -315,9 +314,9 @@ void type_checker::visit(std::shared_ptr<binary_expression> expr) {
 	}
 
 	if (right_entity == nullptr) {
-		rty = resolve_expr_type(expr->left);
+		rty = resolve_expr_type(*expr.right);
 		if (!rty) {
-			ERROR(ERR_INTERNAL_ERROR, expr->left->span, "Type Checker", "RHS of binary expression has no type or entity");
+			ERROR(ERR_INTERNAL_ERROR, expr.right->span, "Type Checker", "RHS of binary expression has no type or entity");
 			return;
 		}
 	}
@@ -337,18 +336,18 @@ void type_checker::visit(std::shared_ptr<binary_expression> expr) {
 	// if both sides are primitive types, check if a built in operator exists
 	if (lty->is_primitive() && rty->is_primitive()) {
 		for (const auto& op : builtin_operators) {
-			if (op.matches(lty, expr->oparator, rty)) {
-				expr->result_type = op.result_type;
+			if (op.matches(lty, expr.oparator, rty)) {
+				expr.result_type = op.result_type;
 				return;
 			}
 		}
-		ERROR(ERR_NO_MATCHING_OPERATOR, expr->span, lty->name().c_str(), rty->name().c_str());
+		ERROR(ERR_NO_MATCHING_OPERATOR, expr.span, lty->name().c_str(), rty->name().c_str());
 		return;
 	}
 	else if (lty->is_enum() && rty->is_enum()) {
 		// we can compare enums if they are the same type
-		if (*lty == rty && expr->oparator == TT_EQUAL || expr->oparator == TT_NOT_EQUAL) {
-			expr->result_type = to_data_type(DT_BOOL);
+		if (*lty == rty && expr.oparator == TT_EQUAL || expr.oparator == TT_NOT_EQUAL) {
+			expr.result_type = to_data_type(DT_BOOL);
 			return;
 		}
 	}
@@ -356,50 +355,50 @@ void type_checker::visit(std::shared_ptr<binary_expression> expr) {
 		// if at least one side is custom, we can check user-defined operators
 		if (auto left_custom = lty->as_custom()) {
 			if (!left_custom->declaration) {
-				ERROR(ERR_TYPE_NOT_DEFINED, expr->span, left_custom->name().c_str());
+				ERROR(ERR_TYPE_NOT_DEFINED, expr.span, left_custom->name().c_str());
 				return;
 			}
 			for (const auto& op : left_custom->declaration->operators) {
-				if (op->matches(lty, expr->oparator, rty)) {
-					expr->result_type = op->result_type;
+				if (op->matches(lty, expr.oparator, rty)) {
+					expr.result_type = op->result_type;
 					return;
 				}
 			}
 		}
 		if (auto right_custom = rty->as_custom()) {
 			if (!right_custom->declaration) {
-				ERROR(ERR_TYPE_NOT_DEFINED, expr->span, right_custom->name().c_str());
+				ERROR(ERR_TYPE_NOT_DEFINED, expr.span, right_custom->name().c_str());
 				return;
 			}
 			for (const auto& op : right_custom->declaration->operators) {
-				if (op->matches(lty, expr->oparator, rty)) {
-					expr->result_type = op->result_type;
+				if (op->matches(lty, expr.oparator, rty)) {
+					expr.result_type = op->result_type;
 					return;
 				}
 			}
 		}
 	}
 	// no built-in or user-defined operators available
-	ERROR(ERR_NO_MATCHING_OPERATOR_BUILTIN_USER, expr->span, lty->name().c_str(), rty->name().c_str());
+	ERROR(ERR_NO_MATCHING_OPERATOR_BUILTIN_USER, expr.span, lty->name().c_str(), rty->name().c_str());
 }
-void type_checker::visit(std::shared_ptr<assignment_expression> expr) {
-	expr->left->accept(*this);
-	expr->right->accept(*this);
-	auto left_type = resolve_expr_type(expr->left);
-	auto right_type = resolve_expr_type(expr->right);
+void type_checker::visit(assignment_expression& expr) {
+	expr.left->accept(*this);
+	expr.right->accept(*this);
+	auto left_type = resolve_expr_type(expr.left);
+	auto right_type = resolve_expr_type(expr.right);
 
 	// cannot assign to a const variable
-	auto entity = expr->left->entity(*active_symbols);
+	auto entity = expr.left->entity(*active_symbols);
 	if (entity->kind() == ENTITY_VARIABLE) {
 		if (entity->as_variable()->is_const()) {
-			ERROR(ERR_CONST_ASSIGNMENT, expr->span, entity->name().c_str());
+			ERROR(ERR_CONST_ASSIGNMENT, expr.span, entity->name().c_str());
 			return;
 		}
 	}
 
 	// cannot assign to an rvalue
-	if (expr->left->is_rvalue()) {
-		ERROR(ERR_ASSIGNMENT_TO_RVALUE, expr->span);
+	if (expr.left->is_rvalue()) {
+		ERROR(ERR_ASSIGNMENT_TO_RVALUE, expr.span);
 		return;
 	}
 
@@ -410,95 +409,95 @@ void type_checker::visit(std::shared_ptr<assignment_expression> expr) {
 	}
 
 	// mismatch assignment
-	if (*left_type != right_type && !is_valid_conversion(right_type, left_type, true, expr->right->span)) {
-		ERROR(ERR_TYPE_ASSIGNMENT_MISMATCH, expr->span, left_type->name().c_str(), right_type->name().c_str());
+	if (*left_type != right_type && !is_valid_conversion(right_type, left_type, true, expr.right->span)) {
+		ERROR(ERR_TYPE_ASSIGNMENT_MISMATCH, expr.span, left_type->name().c_str(), right_type->name().c_str());
 		return;
 	}
 }
-void type_checker::visit(std::shared_ptr<address_of_expression> expr) {
-	expr->value->accept(*this);
-	if (expr->is_rvalue()) {
-		ERROR(ERR_ADDRESS_OF_RVALUE, expr->span);
+void type_checker::visit(address_of_expression& expr) {
+	expr.value->accept(*this);
+	if (expr.is_rvalue()) {
+		ERROR(ERR_ADDRESS_OF_RVALUE, expr.span);
 		return;
 	}
 }
-void type_checker::visit(std::shared_ptr<deref_expression> expr) {
-	expr->value->accept(*this);
-	if (!resolve_expr_type(expr->value)->is_pointer()) {
-		ERROR(ERR_DEREFERENCE_OF_NON_POINTER, expr->span);
+void type_checker::visit(deref_expression& expr) {
+	expr.value->accept(*this);
+	if (!resolve_expr_type(expr.value)->is_pointer()) {
+		ERROR(ERR_DEREFERENCE_OF_NON_POINTER, expr.span);
 		return;
 	}
 }
-void type_checker::visit(std::shared_ptr<unary_expression> expr) {
-	expr->operand->accept(*this);
-	auto operand_type = resolve_expr_type(expr->operand);
-	switch (expr->oparator) {
+void type_checker::visit(unary_expression& expr) {
+	expr.operand->accept(*this);
+	auto operand_type = resolve_expr_type(expr.operand);
+	switch (expr.oparator) {
 	case TT_NOT:
 		if (!operand_type->is_primitive() || operand_type->primitive != DT_BOOL) {
-			ERROR(ERR_LOGICAL_NOT_BOOLEAN_ONLY, expr->span);
+			ERROR(ERR_LOGICAL_NOT_BOOLEAN_ONLY, expr.span);
 			return;
 		}
 		break;
 	case TT_SUBTRACT:
 		if (!operand_type->is_primitive() || !operand_type->is_numeric()) {
-			ERROR(ERR_NEGATE_NUMERIC_ONLY, expr->span);
+			ERROR(ERR_NEGATE_NUMERIC_ONLY, expr.span);
 			return;
 		}
 		break;
 	case TT_INCREMENT:
 		if (!operand_type->is_primitive() || !operand_type->is_integral()) {
-			ERROR(ERR_INCREMENT_INTEGER_ONLY, expr->span);
+			ERROR(ERR_INCREMENT_INTEGER_ONLY, expr.span);
 			return;
 		}
 		break;
 	case TT_DECREMENT:
 		if (!operand_type->is_primitive() || !operand_type->is_integral()) {
-			ERROR(ERR_DECREMENT_INTEGER_ONLY, expr->span);
+			ERROR(ERR_DECREMENT_INTEGER_ONLY, expr.span);
 			return;
 		}
 		break;
 	}
 }
-void type_checker::visit(std::shared_ptr<identifier_expression> expr) {
-	expr->entity_ref.resolve(*active_symbols);
+void type_checker::visit(identifier_expression& expr) {
+	expr.entity_ref.resolve(*active_symbols);
 }
-void type_checker::visit(std::shared_ptr<index_expression> expr) {
-	expr->base->accept(*this);
-	if (!resolve_expr_type(expr->base)->is_indexable()) {
-		ERROR(ERR_BASE_NOT_INDEXABLE, expr->span);
+void type_checker::visit(index_expression& expr) {
+	expr.base->accept(*this);
+	if (!resolve_expr_type(expr.base)->is_indexable()) {
+		ERROR(ERR_BASE_NOT_INDEXABLE, expr.span);
 		return;
 	}
-	expr->indexer->accept(*this);
-	auto indexer_type = resolve_expr_type(expr->indexer);
+	expr.indexer->accept(*this);
+	auto indexer_type = resolve_expr_type(expr.indexer);
 	if (!indexer_type->is_primitive() || !indexer_type->is_integral()) {
-		ERROR(ERR_INDEXER_NOT_INTEGER, expr->indexer->span);
+		ERROR(ERR_INDEXER_NOT_INTEGER, expr.indexer->span);
 		return;
 	}
 }
-void type_checker::visit(std::shared_ptr<cast_expression> expr) {
-	expr->expr->accept(*this);
+void type_checker::visit(cast_expression& expr) {
+	expr.expr->accept(*this);
 
-	auto from = resolve_expr_type(expr->expr);
-	auto& to = expr->cast_type;
+	auto from = resolve_expr_type(expr.expr);
+	auto& to = expr.cast_type;
 
-	if (!is_valid_conversion(from, to, false, expr->span)) {
-		ERROR(ERR_NO_CONVERSION_EXISTS, expr->span, from->name().c_str(), to->name().c_str());
+	if (!is_valid_conversion(from, to, false, expr.span)) {
+		ERROR(ERR_NO_CONVERSION_EXISTS, expr.span, from->name().c_str(), to->name().c_str());
 		return;
 	}
 }
-void type_checker::visit(std::shared_ptr<member_expression> expr) {
-	expr->object->accept(*this);
+void type_checker::visit(member_expression& expr) {
+	expr.object->accept(*this);
 
-	if (expr->is_static_access()) {
+	if (expr.is_static_access()) {
 		// all static member accesses are resolved in the name resolver
 		// we ONLY need to resolve here if it involves types
 		return;
 	}
 
 	// instance access only allowed on variables
-	auto entity = expr->object->entity(*active_symbols);
+	auto entity = expr.object->entity(*active_symbols);
 	if (entity->kind() != ENTITY_VARIABLE) {
-		ERROR(ERR_MEMBER_ACCESS_NOT_ON_VARIABLE, expr->span);
+		ERROR(ERR_MEMBER_ACCESS_NOT_ON_VARIABLE, expr.span);
 		return;
 	}
 
@@ -513,91 +512,91 @@ void type_checker::visit(std::shared_ptr<member_expression> expr) {
 
 	if (!member_access_allowed(type)) {
 		if (auto enm = type->as_enum()) {
-			ERROR(ERR_ENUM_OPTION_MEMBER_ACCESS, expr->span, type->name().c_str());
+			ERROR(ERR_ENUM_OPTION_MEMBER_ACCESS, expr.span, type->name().c_str());
 			return;
 		}
-		ERROR(ERR_MEMBER_ACCESS_ON_NONCOMPOSITE, expr->span, type->name().c_str());
+		ERROR(ERR_MEMBER_ACCESS_ON_NONCOMPOSITE, expr.span, type->name().c_str());
 		return;
 	}
 
 	bool found = false;
 	if (auto custom = type->as_custom()) {
-		auto entity = type_entity::get(custom->declaration);
+		auto cent = type_entity::get(custom->declaration);
 		do {
-			auto var = entity->symbols.get_field(expr->member);
+			auto var = cent->symbols.get_field(expr.member);
 			if (var) {
-				expr->entity_ref = var->ref();
+				expr.entity_ref = var->ref();
 				found = true;
 				break;
 			}
-			entity = entity->base_type();
-		} while (entity != nullptr);
+			cent = cent->base_type();
+		} while (cent != nullptr);
 	}
 	else if (auto enm = type->as_enum()) {
 		for (const auto& option : enm->declaration->options) {
-			if (option->identifier == expr->member) {
+			if (option->identifier == expr.member) {
 				auto option_type = option->type()->clone()->as_enum();
 				option_type->is_enum_option = true;
 				option_type->option_identifier = option->identifier;
-				expr->resolved_type = option_type;
+				expr.resolved_type = option_type;
 				found = true;
 				break;
 			}
 		}
 	}
 	else {
-		ERROR(ERR_INTERNAL_ERROR, expr->span, "Type Checker", "Member access on unsupported composite type");
+		ERROR(ERR_INTERNAL_ERROR, expr.span, "Type Checker", "Member access on unsupported composite type");
 		return;
 	}
 
 	if (!found) {
 		if (type->is_enum()) {
-			ERROR(ERR_NO_ENUM_MEMBER_WITH_NAME, expr->span, type->name().c_str(), expr->member.c_str());
+			ERROR(ERR_NO_ENUM_MEMBER_WITH_NAME, expr.span, type->name().c_str(), expr.member.c_str());
 			return;
 		}
-		ERROR(ERR_NO_MEMBER_WITH_NAME, expr->span, type->name().c_str(), expr->member.c_str());
+		ERROR(ERR_NO_MEMBER_WITH_NAME, expr.span, type->name().c_str(), expr.member.c_str());
 		return;
 	}
 }
-void type_checker::visit(std::shared_ptr<initializer_list> init) {
-	if (init->is_array_initializer) {
+void type_checker::visit(initializer_list& init) {
+	if (init.is_array_initializer) {
 		type_ptr type = data_type::UNKNOWN;
-		for (const auto& value : init->values) {
+		for (const auto& value : init.values) {
 			value->accept(*this);
 			if (type == data_type::UNKNOWN) {
 				type = resolve_expr_type(value);
 			}
 			else if (*type != resolve_expr_type(value)) {
-				ERROR(ERR_ARRAY_INITIALIZER_TYPE_MISMATCH, init->span, type->name().c_str(), resolve_expr_type(value)->name().c_str());
+				ERROR(ERR_ARRAY_INITIALIZER_TYPE_MISMATCH, init.span, type->name().c_str(), resolve_expr_type(value)->name().c_str());
 				return;
 			}
 		}
 		// we know the result type for array initializers
 		// however, we need to remember its an array and convert accordingly
-		init->result_type = make_array(type);
+		init.result_type = make_array(type);
 		return;
 	}
-	for (const auto& value : init->values) {
+	for (const auto& value : init.values) {
 		value->accept(*this);
 	}
 }
-void type_checker::visit(std::shared_ptr<function_call> func_call) {
+void type_checker::visit(function_call& func_call) {
 	std::vector<type_ptr> arg_types;
-	for (const auto& arg : func_call->args) {
+	for (const auto& arg : func_call.args) {
 		arg->accept(*this);
 		arg_types.push_back(resolve_expr_type(arg));
 	}
 	std::vector<type_ptr> generic_types;
-	for (const auto& gen : func_call->generic_args) {
+	for (const auto& gen : func_call.generic_args) {
 		// add to generics list
 		generic_types.push_back(gen);
 	}
 
 	// we need to resolve constructor candidates here in case its a generic type
-	if (func_call->is_constructor) {
-		auto& ctor_type = func_call->ctor_type;
+	if (func_call.is_constructor) {
+		auto& ctor_type = func_call.ctor_type;
 		if (!ctor_type) {
-			ERROR(ERR_INTERNAL_ERROR, func_call->span, "Type Checker", "Constructor type not set");
+			ERROR(ERR_INTERNAL_ERROR, func_call.span, "Type Checker", "Constructor type not set");
 			return;
 		}
 
@@ -605,54 +604,54 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 			// instantiate generic type
 			ctor_type = unbox_generic_type(ctor_type, generic_types);
 			if (!ctor_type) {
-				ERROR(ERR_INTERNAL_ERROR, func_call->span, "Type Checker", "Failed to unbox generic type for constructor");
+				ERROR(ERR_INTERNAL_ERROR, func_call.span, "Type Checker", "Failed to unbox generic type for constructor");
 				return;
 			}
 		}
 
 		// get constructor candidates
-		auto ctor_candidates = get_ctor_candidates(ctor_type, func_call->args.size());
+		auto ctor_candidates = get_ctor_candidates(ctor_type, func_call.args.size());
 		if (ctor_candidates.empty()) {
-			ERROR(ERR_NO_MATCHING_CONSTRUCTOR, func_call->span, func_call->identifier.c_str());
+			ERROR(ERR_NO_MATCHING_CONSTRUCTOR, func_call.span, func_call.identifier.c_str());
 			return;
 		}
-		func_call->declaration_candidates = ctor_candidates;
+		func_call.declaration_candidates = ctor_candidates;
 	}
 
 	// we need to resolve candidates here if the function call
 	// is a method, as it cant be done in the name resolver pass
-	if (func_call->is_method()) {
+	if (func_call.is_method()) {
 		// resolve the object
-		func_call->callee->accept(*this);
+		func_call.callee->accept(*this);
 
-		auto type = resolve_expr_type(func_call->callee);
+		auto type = resolve_expr_type(func_call.callee);
 		if (!method_access_allowed(type)) {
 			// should change this error really as it could be composite with no members like a Foo** etc.
-			ERROR(ERR_METHOD_ACCESS_ON_NONCOMPOSITE, func_call->span, type->name().c_str());
+			ERROR(ERR_METHOD_ACCESS_ON_NONCOMPOSITE, func_call.span, type->name().c_str());
 			return;
 		}
 
 		if (!type->is_custom()) {
 			// if this is ever thrown, it means there must be a problem with method_access_allowed
-			ERROR(ERR_INTERNAL_ERROR, func_call->span, "Type Checker", "Method call on non-custom type");
+			ERROR(ERR_INTERNAL_ERROR, func_call.span, "Type Checker", "Method call on non-custom type");
 		}
 
 		// find method - dont check for return type as its unknown in a call
-		auto method_candidates = get_method_candidates(type->as_custom()->declaration, func_call->identifier, func_call->args.size());
+		auto method_candidates = get_method_candidates(type->as_custom()->declaration, func_call.identifier, func_call.args.size());
 		if (method_candidates.empty()) {
-			ERROR(ERR_NO_MATCHING_METHOD, func_call->span, func_call->identifier.c_str());
+			ERROR(ERR_NO_MATCHING_METHOD, func_call.span, func_call.identifier.c_str());
 			return;
 		}
-		func_call->declaration_candidates = method_candidates;
+		func_call.declaration_candidates = method_candidates;
 	}
 
-	if (!func_call->declaration_candidates.empty()) {
+	if (!func_call.declaration_candidates.empty()) {
 		// check any candidates match arguments provided
 		std::vector<candidate_score> matches;
-		for (const auto& candidate : func_call->declaration_candidates) {
+		for (const auto& candidate : func_call.declaration_candidates) {
 			auto expected_types = candidate->get_param_types();
 			if (expected_types.size() != arg_types.size()) {
-				ERROR(ERR_INTERNAL_ERROR, func_call->span, "Type Checker", "Argument count for candidate doesnt match");
+				ERROR(ERR_INTERNAL_ERROR, func_call.span, "Type Checker", "Argument count for candidate doesnt match");
 				continue; // argument count doesn't match
 			}
 
@@ -660,8 +659,8 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 			if (candidate->is_generic) {
 				// push generic substitutions
 				generic_substitution_stack.push_back({});
-				for (size_t i = 0; i < func_call->generic_args.size(); i++) {
-					generic_substitution_stack.back().push_back(func_call->generic_args[i]);
+				for (size_t i = 0; i < func_call.generic_args.size(); i++) {
+					generic_substitution_stack.back().push_back(func_call.generic_args[i]);
 				}
 			}
 
@@ -676,14 +675,14 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 			}
 		}
 		if (matches.empty()) {
-			if (func_call->is_constructor) {
-				ERROR(ERR_NO_MATCHING_CONSTRUCTOR, func_call->span, func_call->identifier.c_str());
+			if (func_call.is_constructor) {
+				ERROR(ERR_NO_MATCHING_CONSTRUCTOR, func_call.span, func_call.identifier.c_str());
 			}
-			else if (func_call->is_method()) {
-				ERROR(ERR_NO_MATCHING_METHOD, func_call->span, func_call->identifier.c_str());
+			else if (func_call.is_method()) {
+				ERROR(ERR_NO_MATCHING_METHOD, func_call.span, func_call.identifier.c_str());
 			}
 			else {
-				ERROR(ERR_NO_MATCHING_FUNCTION, func_call->span, func_call->identifier.c_str());
+				ERROR(ERR_NO_MATCHING_FUNCTION, func_call.span, func_call.identifier.c_str());
 			}
 			return;
 		}
@@ -694,14 +693,14 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 				});
 			// if top 2 scores are the same, we have an ambiguity error
 			if (matches.size() > 1 && matches[0].score == matches[1].score) {
-				if (func_call->is_constructor) {
-					ERROR(ERR_AMBIGUOUS_CONSTRUCTOR_CALL, func_call->span, func_call->identifier.c_str());
+				if (func_call.is_constructor) {
+					ERROR(ERR_AMBIGUOUS_CONSTRUCTOR_CALL, func_call.span, func_call.identifier.c_str());
 				}
-				else if (func_call->is_method()) {
-					ERROR(ERR_AMBIGUOUS_METHOD_CALL, func_call->span, func_call->identifier.c_str());
+				else if (func_call.is_method()) {
+					ERROR(ERR_AMBIGUOUS_METHOD_CALL, func_call.span, func_call.identifier.c_str());
 				}
 				else {
-					ERROR(ERR_AMBIGUOUS_FUNCTION_CALL, func_call->span, func_call->identifier.c_str());
+					ERROR(ERR_AMBIGUOUS_FUNCTION_CALL, func_call.span, func_call.identifier.c_str());
 				}
 				return;
 			}
@@ -709,81 +708,81 @@ void type_checker::visit(std::shared_ptr<function_call> func_call) {
 			if (best_match->is_generic) {
 				best_match = unbox_generic_func(best_match, generic_types);
 				if (!best_match) {
-					ERROR(ERR_INTERNAL_ERROR, func_call->span, "Type Checker", "Failed to unbox generic function");
+					ERROR(ERR_INTERNAL_ERROR, func_call.span, "Type Checker", "Failed to unbox generic function");
 					return;
 				}
 			}
-			func_call->declaration = best_match;
+			func_call.declaration = best_match;
 		}
 	}
 	// no candidates, name resolver will already emit an error
 }
-void type_checker::visit(std::shared_ptr<if_statement> if_stmt) {
-	if_stmt->condition->accept(*this);
+void type_checker::visit(if_statement& if_stmt) {
+	if_stmt.condition->accept(*this);
 
-	if_stmt->then_block->accept(*this);
-	if (if_stmt->else_node) {
-		if_stmt->else_node->accept(*this);
+	if_stmt.then_node->accept(*this);
+	if (if_stmt.else_node) {
+		if_stmt.else_node->accept(*this);
 	}
 
-	auto cond_type = resolve_expr_type(if_stmt->condition);
+	auto cond_type = resolve_expr_type(if_stmt.condition);
 	if (cond_type == data_type::UNKNOWN) {
 		// assume error has already been reported
 		return;
 	}
 
 	if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
-		ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, if_stmt->span);
+		ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, if_stmt.span);
 		return;
 	}
 }
-void type_checker::visit(std::shared_ptr<inline_if> inline_if) {
-	inline_if->condition->accept(*this);
-	inline_if->statement->accept(*this);
+void type_checker::visit(inline_if& inline_if) {
+	inline_if.condition->accept(*this);
+	inline_if.statement->accept(*this);
 
-	auto cond_type = resolve_expr_type(inline_if->condition);
+	auto cond_type = resolve_expr_type(inline_if.condition);
 	if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
-		ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, inline_if->span);
+		ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, inline_if.span);
 		return;
 	}
 }
-void type_checker::visit(std::shared_ptr<for_loop> for_loop) {
-	if (for_loop->initializer) {
-		for_loop->initializer->accept(*this);
+void type_checker::visit(for_loop& for_loop) {
+	if (for_loop.initializer) {
+		for_loop.initializer->accept(*this);
 	}
 	// condition should always be a boolean expression
-	if (for_loop->condition) {
-		for_loop->condition->accept(*this);
-		auto cond_type = resolve_expr_type(for_loop->condition);
+	if (for_loop.condition) {
+		for_loop.condition->accept(*this);
+		auto cond_type = resolve_expr_type(for_loop.condition);
 		if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
-			ERROR(ERR_FOR_CONDITION_NOT_BOOLEAN, for_loop->span);
+			ERROR(ERR_FOR_CONDITION_NOT_BOOLEAN, for_loop.span);
 			return;
 		}
 	}
-	if (for_loop->increment) {
-		for_loop->increment->accept(*this);
+	if (for_loop.increment) {
+		for_loop.increment->accept(*this);
 	}
-	for_loop->body->accept(*this);
+	for_loop.body->accept(*this);
 }
-void type_checker::visit(std::shared_ptr<while_loop> while_loop) {
-	while_loop->condition->accept(*this);
-	auto cond_type = resolve_expr_type(while_loop->condition);
+void type_checker::visit(while_loop& while_loop) {
+	while_loop.condition->accept(*this);
+	auto cond_type = resolve_expr_type(while_loop.condition);
 	if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
-		ERROR(ERR_WHILE_CONDITION_NOT_BOOLEAN, while_loop->span);
+		ERROR(ERR_WHILE_CONDITION_NOT_BOOLEAN, while_loop.span);
 		return;
 	}
-	while_loop->body->accept(*this);
+	while_loop.body->accept(*this);
 }
-void type_checker::visit(std::shared_ptr<return_statement> ret) {
+void type_checker::visit(return_statement& ret) {
 	if (!current_function) {
 		return;
 	}
 
-	if (ret->is_conditional()) {
-		ret->condition->accept(*this);
-		auto cond_type = resolve_expr_type(ret->condition);
+	if (ret.is_conditional()) {
+		ret.condition->accept(*this);
+		auto cond_type = resolve_expr_type(ret.condition);
 		if (!cond_type->is_primitive() || cond_type->primitive != DT_BOOL) {
-			ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, ret->span);
+			ERROR(ERR_IF_CONDITION_NOT_BOOLEAN, ret.span);
 			return;
 		}
 	}
@@ -796,41 +795,41 @@ void type_checker::visit(std::shared_ptr<return_statement> ret) {
 	if (current_function->is_override && current_function->overridden_function) {
 		func_type = current_function->overridden_function->return_type;
 	}
-	if (ret->value) {
+	if (ret.value) {
 		// check if its a constructor
 		if (current_function->is_constructor) {
-			ERROR(ERR_CONSTRUCTOR_RETURNS_VALUE, ret->span);
+			ERROR(ERR_CONSTRUCTOR_RETURNS_VALUE, ret.span);
 			return;
 		}
 
 		// check if function is void
 		if (func_type->is_primitive() && func_type->is_void()) {
-			ERROR(ERR_VOID_FUNCTION_RETURNS_VALUE, ret->span, current_function->identifier.c_str());
+			ERROR(ERR_VOID_FUNCTION_RETURNS_VALUE, ret.span, current_function->identifier.c_str());
 			return;
 		}
 
-		ret->value->accept(*this);
+		ret.value->accept(*this);
 		// ensure types match
-		auto ret_type = resolve_expr_type(ret->value);
+		auto ret_type = resolve_expr_type(ret.value);
 		if (ret_type == data_type::UNKNOWN) {
 			// assume error has already been reported
 			return;
 		}
-		if (!ret_type || !is_valid_conversion(ret_type, func_type, true, ret->span)) {
-			ERROR(ERR_FUNCTION_RETURN_TYPE_MISMATCH, ret->span, current_function->identifier.c_str(), func_type->name().c_str(), ret_type->name().c_str());
+		if (!ret_type || !is_valid_conversion(ret_type, func_type, true, ret.span)) {
+			ERROR(ERR_FUNCTION_RETURN_TYPE_MISMATCH, ret.span, current_function->identifier.c_str(), func_type->name().c_str(), ret_type->name().c_str());
 			return;
 		}
 	}
 	else if (!current_function->is_constructor) {
 		// ensure function is void
 		if (!func_type->is_primitive() || !func_type->is_void()) {
-			ERROR(ERR_FUNCTION_MUST_RETURN_VALUE, ret->span, current_function->identifier.c_str());
+			ERROR(ERR_FUNCTION_MUST_RETURN_VALUE, ret.span, current_function->identifier.c_str());
 			return;
 		}
 	}
 }
 
-type_ptr type_checker::resolve_expr_type(std::shared_ptr<expression> expr) {
+type_ptr type_checker::resolve_expr_type(expression* expr) {
 	auto ent = expr->entity(*active_symbols);
 	if (ent == entity::UNRESOLVED) {
 		return data_type::UNKNOWN;
@@ -859,7 +858,7 @@ bool type_checker::is_valid_conversion(type_ptr from, type_ptr to, bool implicit
 		return true;
 	}
 	if (from->is_custom()) {
-		return is_valid_upcast(from, to, span);
+		return is_valid_upcast(from, to);
 	}
 	else if (from->is_null() && to->is_pointer()) {
 		return true; // allow implicit null to pointer conversion
@@ -888,7 +887,7 @@ bool type_checker::is_valid_conversion(type_ptr from, type_ptr to, bool implicit
 	}
 	return false;
 }
-bool type_checker::is_valid_upcast(type_ptr from, type_ptr to, code_span span) {
+bool type_checker::is_valid_upcast(type_ptr from, type_ptr to) {
 	if (!from->is_pointer() || !to->is_pointer()) {
 		// both must be pointers for a valid upcast
 		return false;
@@ -1042,11 +1041,11 @@ std::shared_ptr<function_declaration> type_checker::unbox_generic_func(std::shar
 	new_func->generic_args = types;
 
 	// cache instance & add to worklist
-	ctx.inst_worklist.enqueue(new_func);
+	_ctx.inst_worklist.enqueue(new_func);
 	generic_function_instances[func][types] = new_func;
 
 	// substitute concrete types in place
-	generic_substitutor substitutor(pass_unit, types);
+	generic_substitutor substitutor(types);
 	new_func->accept(substitutor);
 
 	// overlay table

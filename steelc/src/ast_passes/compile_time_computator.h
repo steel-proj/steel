@@ -7,48 +7,51 @@
 #include <ast/ast_visitor.h>
 #include <ast/ast_fwd.h>
 #include <representations/types/data_type.h>
+#include <error/internal.h>
 
 class compile_time_computator_visitor : ast_visitor {
 	compile_time_computator_visitor()
 		: result(data_type::UNKNOWN, "") {
 	}
 
-	//void visit(std::shared_ptr<function_declaration> func) override;
-	//void visit(std::shared_ptr<variable_declaration> var) override;
-	//void visit(std::shared_ptr<type_declaration> decl);
-	//void visit(std::shared_ptr<module_declaration> mod);
-	//void visit(std::shared_ptr<conversion_declaration> conv);
-	//void visit(std::shared_ptr<operator_declaration> op);
-	//void visit(std::shared_ptr<enum_declaration> enum_decl);
-	//void visit(std::shared_ptr<enum_option> option);
-	//void visit(std::shared_ptr<expression_statement> expr);
-	void visit(std::shared_ptr<binary_expression> expr);
-	//void visit(std::shared_ptr<assignment_expression> expr);
-	//void visit(std::shared_ptr<member_expression> expr);
-	//void visit(std::shared_ptr<address_of_expression> expr);
-	//void visit(std::shared_ptr<deref_expression> expr);
-	//void visit(std::shared_ptr<unary_expression> expr);
-	//void visit(std::shared_ptr<index_expression> expr);
-	//void visit(std::shared_ptr<identifier_expression> id) override;
-	//void visit(std::shared_ptr<this_expression> expr);
-	//void visit(std::shared_ptr<cast_expression> expr);
-	//void visit(std::shared_ptr<initializer_list> init);
-	//void visit(std::shared_ptr<function_call> func_call);
-	void visit(std::shared_ptr<literal> literal) override;
-	//void visit(std::shared_ptr<import_statement> import_stmt);
-	//void visit(std::shared_ptr<code_block> block) override;
-	//void visit(std::shared_ptr<if_statement> if_stmt) override;
-	//void visit(std::shared_ptr<inline_if> inline_if);
-	//void visit(std::shared_ptr<for_loop> for_loop);
-	//void visit(std::shared_ptr<while_loop> while_loop);
-	//void visit(std::shared_ptr<return_statement> ret_stmt) override;
-	//void visit(std::shared_ptr<break_statement> brk_stmt);
+	//void visit(function_declaration& func) override;
+	//void visit(variable_declaration& var) override;
+	//void visit(type_declaration& decl);
+	//void visit(module_declaration& mod);
+	//void visit(conversion_declaration& conv);
+	//void visit(operator_declaration& op);
+	//void visit(enum_declaration& enum_decl);
+	//void visit(enum_option& option);
+	//void visit(expression_statement& expr);
+	void visit(binary_expression& expr);
+	//void visit(assignment_expression& expr);
+	//void visit(member_expression& expr);
+	//void visit(address_of_expression& expr);
+	//void visit(deref_expression& expr);
+	//void visit(unary_expression& expr);
+	//void visit(index_expression& expr);
+	//void visit(identifier_expression& id) override;
+	//void visit(this_expression& expr);
+	//void visit(cast_expression& expr);
+	//void visit(initializer_list& init);
+	//void visit(function_call& func_call);
+	void visit(literal& literal) override;
+	//void visit(import_statement& import_stmt);
+	//void visit(code_block& block) override;
+	//void visit(if_statement& if_stmt) override;
+	//void visit(inline_if& inline_if);
+	//void visit(for_loop& for_loop);
+	//void visit(while_loop& while_loop);
+	//void visit(return_statement& ret_stmt) override;
+	//void visit(break_statement& brk_stmt);
 
 private:
 	computed_value result;
 
 	template<typename Nty>
-	computed_value accept(std::shared_ptr<Nty> node) {
+	computed_value accept(Nty* node) {
+		s_assert(node != nullptr, "Cannot compute value of null node");
+
 		result = computed_value(data_type::UNKNOWN, "");
 		node->accept(*this);
 		return result;

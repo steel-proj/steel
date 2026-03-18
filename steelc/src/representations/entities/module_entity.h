@@ -11,8 +11,8 @@ class symbol_table;
 
 class module_entity : public entity, public std::enable_shared_from_this<module_entity> {
 public:
-	static std::shared_ptr<module_entity> get(std::shared_ptr<module_info> mod_info, std::shared_ptr<module_entity> owner = nullptr) {
-		return std::shared_ptr<module_entity>(new module_entity(mod_info, owner));
+	static std::unique_ptr<module_entity> get(std::shared_ptr<module_info> mod_info, module_entity* owner = nullptr) {
+		return std::unique_ptr<module_entity>(new module_entity(mod_info, owner));
 	}
 
 	std::string name() const override;
@@ -30,10 +30,10 @@ public:
 	}
 
 	std::shared_ptr<module_info> mod_info;
-	std::shared_ptr<module_entity> parent_module = nullptr;
+	module_entity* parent_module = nullptr;
 
 private:
-	module_entity(std::shared_ptr<module_info> mod_info, std::shared_ptr<module_entity> owner)
+	module_entity(std::shared_ptr<module_info> mod_info, module_entity* owner)
 		: entity(ENTITY_MODULE), mod_info(mod_info), parent_module(owner) {
 	}
 };

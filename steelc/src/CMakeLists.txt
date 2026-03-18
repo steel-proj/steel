@@ -12,6 +12,8 @@ target_sources(steelc_core PRIVATE
     "ast/ast.h"
     "ast/ast_fwd.h"
     "ast/ast_node.h"
+    "ast/ast_pass.h"
+    "ast/ast_utils.h"
     "ast/ast_visitor.cpp"
     "ast/ast_visitor.h"
     "ast/compilation_unit.h"
@@ -138,25 +140,26 @@ target_sources(steelc_core PRIVATE
 
     # compiler/
     "compiler/compilation_ctx.h"
-    "compiler/compilation_pass.cpp"
-    "compiler/compilation_pass.h"
+    "compiler/compilation_step.h"
     "compiler/compiler.cpp"
     "compiler/compiler.h"
     "compiler/compile_config.h"
     "compiler/instantiation_worklist.h"
+    "compiler/passes/ir_pass.h"
+    "compiler/passes/pass_manager.h"
 
     # debugging/
     "debugging/stack_trace.cpp"
     "debugging/stack_trace.h"
 
     # diagnostics/
+    "diagnostics/compilation_diagnostic.h"
+    "diagnostics/compilation_diagnostic_catalog.h"
     "diagnostics/diagnostics.cpp"
     "diagnostics/diagnostics.h"
+    "diagnostics/diagnostics_engine.h"
 
     # error/
-    "error/compilation_advice.h"
-    "error/compilation_error.h"
-    "error/compilation_error_catalog.h"
     "error/internal.cpp"
     "error/internal.h"
 
@@ -172,10 +175,10 @@ target_sources(steelc_core PRIVATE
     "formatting/text_style.h"
     "formatting/ansi/ansi_style_formatting.cpp"
     "formatting/ansi/ansi_style_formatting.h"
-    "formatting/error_formatting/error_formatter.cpp"
-    "formatting/error_formatting/error_formatter.h"
-    "formatting/error_formatting/source_context.cpp" 
-    "formatting/error_formatting/source_context.h"
+    "formatting/diagnostics/diagnostic_formatter.cpp"
+    "formatting/diagnostics/diagnostic_formatter.h"
+    "formatting/diagnostics/source_context.cpp"
+    "formatting/diagnostics/source_context.h"
 
     # input/
     "input/console_args.cpp"
@@ -320,6 +323,8 @@ target_sources(steelc_core PRIVATE
 
     # sys/
     "sys/calling_convention.h"
+    "sys/env.cpp"
+    "sys/env.h"
     "sys/host_defs.h"
     "sys/platform.cpp"
     "sys/platform.h"
@@ -331,6 +336,7 @@ target_sources(steelc_core PRIVATE
     # utils/
     "utils/command_builder.cpp"
     "utils/command_builder.h"
+    "utils/disable_copy.h"
     "utils/iclonable.h"
     "utils/math_utils.h"
     "utils/math_utils.cpp"
@@ -341,7 +347,7 @@ target_sources(steelc_core PRIVATE
     "utils/path_utils.h"
     "utils/string_utils.h"
     "utils/string_utils.cpp"
-)
+ "representations/types/type_factory.h" "representations/types/type_factory.cpp")
 
 target_include_directories(steelc_core
 PUBLIC

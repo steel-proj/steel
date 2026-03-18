@@ -9,95 +9,95 @@
 #include <representations/types/types_fwd.h>
 #include <representations/types/container_types.h>
 
-void init_checker::visit(std::shared_ptr<type_declaration> decl) {
+void init_checker::visit(type_declaration& decl) {
 	// mark all fields as initialized
 	// if they arnt, that will be picked up elsewhere
-	for (const auto& field : decl->fields) {
+	for (const auto& field : decl.fields) {
 		initialized.insert(field);
 		field->initialized = true;
 	}
-	for (const auto& constructor : decl->constructors) {
+	for (const auto& constructor : decl.constructors) {
 		constructor->accept(*this);
 	}
-	for (const auto& member : decl->fields) {
+	for (const auto& member : decl.fields) {
 		member->accept(*this);
 	}
-	for (const auto& method : decl->methods) {
+	for (const auto& method : decl.methods) {
 		method->accept(*this);
 	}
-	for (const auto& op : decl->operators) {
+	for (const auto& op : decl.operators) {
 		op->accept(*this);
 	}
 }
-void init_checker::visit(std::shared_ptr<function_declaration> func) {
+void init_checker::visit(function_declaration& func) {
 	// mark all parameters as initialized
-	for (const auto& param : func->parameters) {
+	for (const auto& param : func.parameters) {
 		initialized.insert(param);
 		param->initialized = true;
 	}
-	if (func->body) {
-		func->body->accept(*this);
+	if (func.body) {
+		func.body->accept(*this);
 	}
 }
-void init_checker::visit(std::shared_ptr<variable_declaration> var) {
-	if (var->has_initializer()) {
-		var->initializer->accept(*this);
+void init_checker::visit(variable_declaration& var) {
+	if (var.has_initializer()) {
+		var.initializer->accept(*this);
 	}
-	else if (!default_initialized(var->type)) {
+	else if (!default_initialized(var.type)) {
 		return;
 	}
 
 	initialized.insert(var);
-	var->initialized = true;
+	var.initialized = true;
 }
-void init_checker::visit(std::shared_ptr<assignment_expression> expr) {
+void init_checker::visit(assignment_expression& expr) {
 	// dont accept left - it might be uninitialized, however
 	// since were not using it we dont want to throw an error
-	expr->right->accept(*this);
+	expr.right->accept(*this);
 
-	auto entity = expr->left->entity();
+	auto entity = expr.left->entity();
 	if (entity && entity->kind() == ENTITY_VARIABLE) {
 		auto decl = entity->as_variable()->declaration;
 		initialized.insert(decl);
 		decl->initialized = true;
 	}
 }
-void init_checker::visit(std::shared_ptr<identifier_expression> expr) {
+void init_checker::visit(identifier_expression& expr) {
 	// if its not a variable we can safely ignore this
-	if (expr->entity()->kind() != ENTITY_VARIABLE) {
+	if (expr.entity()->kind() != ENTITY_VARIABLE) {
 		return;
 	}
 
-	if (initialized.find(expr->entity()->as_variable()->declaration) == initialized.end()) {
-		ERROR(ERR_UNINITIALIZED_VARIABLE, expr->span, expr->identifier.c_str());
+	if (initialized.find(expr.entity()->as_variable()->declaration) == initialized.end()) {
+		ERROR(ERR_UNINITIALIZED_VARIABLE, expr.span, expr.identifier.c_str());
 		return;
 	}
 }
-void init_checker::visit(std::shared_ptr<code_block> block) {
+void init_checker::visit(code_block& block) {
 	auto before = initialized;
-	for (auto& stmt : block->body) {
+	for (auto& stmt : block.body) {
 		stmt->accept(*this);
 	}
 	initialized = before;
 }
-void init_checker::visit(std::shared_ptr<if_statement> if_stmt) {
-	if_stmt->condition->accept(*this);
+void init_checker::visit(if_statement& if_stmt) {
+	if_stmt.condition->accept(*this);
 
 	auto before = initialized;
 	auto then_set = initialized;
-	auto then_block = std::dynamic_pointer_cast<code_block>(if_stmt->then_block);
+	auto then_block = std::dynamic_pointer_cast<code_block>(if_stmt.then_block);
 	traverse_block(then_block, false);
 	then_set = initialized;
 
 	auto else_set = before;
-	if (if_stmt->else_node) {
+	if (if_stmt.else_node) {
 		initialized = before;
-		if (auto else_node = std::dynamic_pointer_cast<code_block>(if_stmt->else_node)) {
+		if (auto else_node = std::dynamic_pointer_cast<code_block>(if_stmt.else_node)) {
 			traverse_block(else_node, false);
 		}
 		else {
 			// usually an else-if statement, so we can accept as normal
-			if_stmt->else_node->accept(*this);
+			if_stmt.else_node->accept(*this);
 		}
 		else_set = initialized;
 	}
@@ -109,25 +109,25 @@ void init_checker::visit(std::shared_ptr<if_statement> if_stmt) {
 	}
 	initialized = intersection;
 }
-void init_checker::visit(std::shared_ptr<for_loop> for_loop) {
+void init_checker::visit(for_loop& for_loop) {
 	// may never run, assume initializations could never occur
-	if (for_loop->initializer)
-		for_loop->initializer->accept(*this);
-	if (for_loop->condition)
-		for_loop->condition->accept(*this);
+	if (for_loop.initializer)
+		for_loop.initializer->accept(*this);
+	if (for_loop.condition)
+		for_loop.condition->accept(*this);
 
 	auto before = initialized;
-	auto block = std::dynamic_pointer_cast<code_block>(for_loop->body);
+	auto block = std::dynamic_pointer_cast<code_block>(for_loop.body);
 	traverse_block(block, false);
 
 	initialized = before;
 }
-void init_checker::visit(std::shared_ptr<while_loop> while_loop) {
+void init_checker::visit(while_loop& while_loop) {
 	// may never run, assume initializations could never occur
-	while_loop->condition->accept(*this);
+	while_loop.condition->accept(*this);
 
 	auto before = initialized;
-	auto block = std::dynamic_pointer_cast<code_block>(while_loop->body);
+	auto block = std::dynamic_pointer_cast<code_block>(while_loop.body);
 	traverse_block(block, false);
 
 	initialized = before;
@@ -148,4 +148,5 @@ bool init_checker::default_initialized(type_ptr type) {
 	if (auto arr = type->as_array()) {
 		return arr->size_expression != nullptr;
 	}
+	return false;
 }

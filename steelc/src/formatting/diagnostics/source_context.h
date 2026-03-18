@@ -3,16 +3,16 @@
 #include <string>
 #include <vector>
 
-#include <error/compilation_error.h>
+#include <diagnostics/compilation_diagnostic.h>
 #include <stproj/source_file.h>
 
-namespace error_formatting {
+namespace diagnostic_formatting {
 	class source_context {
 	public:
 		static constexpr int CONTEXT_SIZE = 3;
 
 	public:
-		explicit source_context(const compilation_error& err);
+		explicit source_context(const compilation_diagnostic& diag);
 
 		bool valid() const;
 

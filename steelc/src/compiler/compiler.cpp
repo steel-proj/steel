@@ -7,12 +7,14 @@
 #include <string>
 
 #include <compiler/compilation_ctx.h>
+#include <compiler/passes/pass_manager.h>
 #include <stproj/source_file.h>
 #include <lexer/lexer.h>
 #include <lexer/token.h>
 #include <lexer/token_utils.h>
 #include <parser/parser.h>
 #include <ast/compilation_unit.h>
+#include <ast/ast_pass.h>
 #include <ast_passes/declaration_collector.h>
 #include <ast_passes/import_resolver.h>
 #include <ast_passes/type_resolver.h>
@@ -33,20 +35,16 @@
 #include <output/output.h>
 
 bool compiler::compile(const compile_config& cl_cfg, codegen_config& cg_cfg) {
-	compilation_ctx ctx(module_manager);
-	
-	// TODO:
-	// switch to a stage + pass based system
-	// rather than hardcoding
+	compilation_ctx ctx(module_manager, diag_engine);
 
 	for (auto& file : sources) {
-		auto unit = std::make_shared<compilation_unit>();
+		auto unit = std::make_unique<compilation_unit>();
 		unit->source_file = std::make_shared<source_file>(file);
 
 		output::print(text_styles::colors::BLUE, "Compiling: ");
 		output::print("\'{}\'\n", file.relative_path);
 
-		lexer lexer(file.content, unit);
+		lexer lexer(ctx, file.content);
 		std::vector<token> tokens = lexer.tokenize();
 
 		if (cl_cfg.print_tokens) {
@@ -65,90 +63,47 @@ bool compiler::compile(const compile_config& cl_cfg, codegen_config& cg_cfg) {
 			output::print("\n");
 		}
 
-		if (lexer.has_errors()) {
-			auto lexer_errors = lexer.get_errors();
-			errors.insert(errors.end(), lexer_errors.begin(), lexer_errors.end());
+		if (lexer.step_failed()) {
 			return false;
 		}
 
-		parser parser(unit, tokens);
+		parser parser(ctx, unit.get(), tokens);
 		parser.parse();
 
-		if (parser.has_errors()) {
-			auto parser_errors = parser.get_errors();
-			errors.insert(errors.end(), parser_errors.begin(), parser_errors.end());
+		if (parser.step_failed()) {
 			return false;
 		}
 
 		// AST creation complete, collect symbols for each file
 		// and map to the modules for later symbol resolution
-		declaration_collector collector(unit, ctx);
-		unit->accept(collector);
-		if (collector.has_errors()) {
-			const auto& errs = collector.get_errors();
-			errors.insert(errors.end(), errs.begin(), errs.end());
+		declaration_collector collector(ctx);
+		collector.run(*unit);
+
+		if (collector.step_failed()) {
+			return false;
 		}
 
-		compilation_units.push_back(unit);
+		compilation_units.push_back(std::move(unit));
 	}
+
+	pass_manager<compilation_unit> ast_pm(ctx);
+	setup_default_ast_passes(ast_pm);
 
 	// after collecting symbols for each file, we can
 	// proceed with all other semantic analysis passes
 	for (auto& unit : compilation_units) {
-		// the import resolver identifies import statements and
-		// adds them to the units import table (imports are file wide)
-		import_resolver import_resolver(unit, ctx);
-		unit->accept(import_resolver);
-		if (import_resolver.has_errors()) {
-			const auto& errs = import_resolver.get_errors();
-			errors.insert(errors.end(), errs.begin(), errs.end());
-		}
-
-		// the type resolver resolves explicit known typenames e.g. 'int'
-		type_resolver type_resolver(unit, ctx);
-		unit->accept(type_resolver);
-		if (type_resolver.has_errors()) {
-			const auto& errs = type_resolver.get_errors();
-			errors.insert(errors.end(), errs.begin(), errs.end());
-		}
-
-		// the name resolver resolves all identifiers to their declarations
-		name_resolver name_resolver(unit, ctx);
-		unit->accept(name_resolver);
-		if (name_resolver.has_errors()) {
-			const auto& errs = name_resolver.get_errors();
-			errors.insert(errors.end(), errs.begin(), errs.end());
-		}
-
-		type_checker type_checker(unit, ctx);
-		unit->accept(type_checker);
-		if (type_checker.has_errors()) {
-			const auto& errs = type_checker.get_errors();
-			errors.insert(errors.end(), errs.begin(), errs.end());
-		}
-
-		init_checker init_checker(unit);
-		unit->accept(init_checker);
-		if (init_checker.has_errors()) {
-			const auto& errs = init_checker.get_errors();
-			errors.insert(errors.end(), errs.begin(), errs.end());
-		}
-
-		flow_analyzer flow_analyzer(unit);
-		unit->accept(flow_analyzer);
-		if (flow_analyzer.has_errors()) {
-			const auto& errs = flow_analyzer.get_errors();
-			errors.insert(errors.end(), errs.begin(), errs.end());
-		}
-
-		if (errors.size() > 0) {
+		if (!ast_pm.run(*unit)) {
 			return false;
 		}
 	}
 
 	// lower ast to mir
 	mir_lowerer mir_lowerer(ctx);
-	std::vector<std::unique_ptr<mir_module>> mir_modules = mir_lowerer.lower_all(compilation_units);
+	std::vector<compilation_unit*> units_raw;
+	for (const auto& unit : compilation_units) {
+		units_raw.push_back(unit.get());
+	}
+	std::vector<std::unique_ptr<mir_module>> mir_modules = mir_lowerer.lower_all(units_raw);
 
 	if (cl_cfg.print_mir) {
 		mir_printer printer;
@@ -164,6 +119,15 @@ bool compiler::compile(const compile_config& cl_cfg, codegen_config& cg_cfg) {
 	codegen_result = codegen.generate_all();
 
 	return codegen_result.success;
+}
+
+void compiler::setup_default_ast_passes(pass_manager<compilation_unit>& pm) {
+	pm.add_pass<import_resolver>();
+	pm.add_pass<type_resolver>();
+	pm.add_pass<name_resolver>();
+	pm.add_pass<type_checker>();
+	pm.add_pass<init_checker>();
+	pm.add_pass<flow_analyzer>();
 }
 
 std::vector<std::string> compiler::read_source(std::string& path) {

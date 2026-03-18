@@ -1,23 +1,32 @@
 #pragma once
 
+#include <memory>
+#include <utility>
 #include <string>
 #include <vector>
 
+#include <ast/ast_fwd.h>
+#include <ast/ast_visitor.h>
 #include <ast/declarations/declaration.h>
 #include <ast/declarations/variable_declaration.h>
 #include <parser/parser_utils.h>
 #include <representations/types/types_fwd.h>
 #include <representations/types/data_type.h>
+#include <utils/iclonable.h>
+#include <utils/disable_copy.h>
 
 class conversion_declaration : public declaration, public std::enable_shared_from_this<conversion_declaration> {
 public:
-	ENABLE_ACCEPT(conversion_declaration)
+	ENABLE_ACCEPT_AST(conversion_declaration)
+	DISABLE_CLONE(conversion_declaration, ast_node)
 
-	conversion_declaration(type_ptr from, type_ptr to, ast_ptr body)
-		: from(from), to(to), body(body), implicit(false) {
+public:
+	conversion_declaration() = default;
+	conversion_declaration(type_ptr from, type_ptr to, std::unique_ptr<ast_node> body)
+		: from(from), to(to), body(std::move(body)), implicit(false) {
 	}
-	conversion_declaration(type_ptr from, type_ptr to, ast_ptr body, bool implicit)
-		: from(from), to(to), body(body), implicit(implicit) {
+	conversion_declaration(type_ptr from, type_ptr to, std::unique_ptr<ast_node> body, bool implicit)
+		: from(from), to(to), body(std::move(body)), implicit(implicit) {
 	}
 	conversion_declaration(type_ptr from, type_ptr to, bool implicit)
 		: from(from), to(to), body(nullptr), implicit(implicit) {
@@ -44,6 +53,6 @@ public:
 
 	type_ptr from;
 	type_ptr to;
-	ast_ptr body;
+	std::unique_ptr<ast_node> body;
 	bool implicit;
 };

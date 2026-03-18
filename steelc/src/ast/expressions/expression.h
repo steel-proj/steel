@@ -5,10 +5,15 @@
 #include <ast/ast_node.h>
 #include <representations/types/types_fwd.h>
 #include <representations/entities/entities_fwd.h>
+#include <utils/iclonable.h>
+#include <error/internal.h>
 
 class symbol_table;
 
 class expression : public ast_node {
+public:
+	DISABLE_CLONE(expression, ast_node)
+
 public:
 	virtual ~expression() = default;
 
@@ -25,8 +30,8 @@ public:
 
 	// the entity this expression refers to (variable, function, type, etc)
 	// this is dynamically resolved using the provided symbol table
-	virtual entity_ptr entity(const symbol_table& sym_table) { return nullptr; }
+	virtual entity* entity(const symbol_table&) { return nullptr; }
 	// the entity this expression refers to (variable, function, type, etc)
 	// non-dynamically resolved version (uses the cached entity if available)
-	virtual entity_ptr entity() { return nullptr; }
+	virtual entity* entity() { return nullptr; }
 };

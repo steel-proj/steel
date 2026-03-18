@@ -6,24 +6,24 @@
 
 #include <ast/ast_visitor.h>
 #include <ast/ast_fwd.h>
-#include <compiler/compilation_pass.h>
+#include <ast/ast_pass.h>
 #include <symbolics/symbol_table.h>
 
-class init_checker : public ast_visitor, public compilation_pass {
+class init_checker : public ast_pass {
 public:
-	init_checker(std::shared_ptr<compilation_unit> unit)
-		: compilation_pass(unit) {
+	init_checker(compilation_ctx& ctx)
+		: ast_pass(ctx) {
 	}
 
-	void visit(std::shared_ptr<type_declaration> decl) override;
-	void visit(std::shared_ptr<function_declaration> func_decl) override;
-	void visit(std::shared_ptr<variable_declaration> var) override;
-	void visit(std::shared_ptr<assignment_expression> expr) override;
-	void visit(std::shared_ptr<identifier_expression> expr) override;
-	void visit(std::shared_ptr<code_block> block) override;
-	void visit(std::shared_ptr<if_statement> if_stmt) override;
-	void visit(std::shared_ptr<for_loop> for_loop) override;
-	void visit(std::shared_ptr<while_loop> while_loop) override;
+	void visit(type_declaration& decl) override;
+	void visit(function_declaration& func_decl) override;
+	void visit(variable_declaration& var) override;
+	void visit(assignment_expression& expr) override;
+	void visit(identifier_expression& expr) override;
+	void visit(code_block& block) override;
+	void visit(if_statement& if_stmt) override;
+	void visit(for_loop& for_loop) override;
+	void visit(while_loop& while_loop) override;
 
 private:
 	std::unordered_set<std::shared_ptr<variable_declaration>> initialized;

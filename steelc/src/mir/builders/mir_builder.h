@@ -17,13 +17,13 @@ public:
 	mir_builder() = default;
 
 	inline void set_function(mir_function* function) {
-		func = function;
+		_func = function;
 	}
 	inline void set_insert_block(mir_block* block) {
-		ins_block = block;
+		_ins_block = block;
 	}
 	inline mir_block* get_insert_block() const {
-		return ins_block;
+		return _ins_block;
 	}
 
 	// builder functions
@@ -61,8 +61,8 @@ public:
 	mir_value build_cast(mir_operand value, mir_type target_type, const std::string& result_name = "");
 
 private:
-	mir_function* func = nullptr;
-	mir_block* ins_block = nullptr;
+	mir_function* _func = nullptr;
+	mir_block* _ins_block = nullptr;
 
 	void insert_instr(const mir_instr&& instr);
 

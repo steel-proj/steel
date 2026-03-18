@@ -13,7 +13,7 @@ namespace output {
 		namespace detail {
 			template<typename... Args>
 			inline void output_fmt(std::format_string<Args...> fmt, Args&&... args) {
-				std::string formatted = formatting::format(fmt.get(), std::forward<Args>(args)...);
+				std::string formatted = formatting::vformat(fmt.get(), std::forward<Args>(args)...);
 				router::instance().write(router::channel::LOG, styled_string(formatted));
 			}
 		}

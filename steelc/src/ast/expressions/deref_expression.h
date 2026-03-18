@@ -2,16 +2,22 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
 #include <parser/parser_utils.h>
+#include <utils/iclonable.h>
 
 class deref_expression : public expression, public std::enable_shared_from_this<deref_expression> {
 public:
-	ENABLE_ACCEPT(deref_expression)
+	ENABLE_ACCEPT_AST(deref_expression)
+	ENABLE_CLONE(deref_expression, ast_node)
 
-	deref_expression(std::shared_ptr<expression> value)
-		: value(value) {
+public:
+	deref_expression() = default;
+	deref_expression(std::unique_ptr<expression> value)
+		: value(std::move(value)) {
 	}
 
 	std::string string(int indent) const override {
@@ -19,14 +25,6 @@ public:
 		std::string result = ind + "Dereference Expression:\n";
 		result += ind + " Value:\n" + value->string(indent + 1) + "\n";
 		return result;
-	}
-
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<deref_expression>(
-			std::dynamic_pointer_cast<expression>(value->clone())
-		);
-		cloned->span = span;
-		return cloned;
 	}
 
 	type_ptr type() const override {
@@ -39,5 +37,12 @@ public:
 		return value->is_constant();
 	}
 
-	std::shared_ptr<expression> value;
+	std::unique_ptr<expression> value;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		deref_expression& deref_target = ast_cast<deref_expression&>(target);
+		deref_target.value = ast_cast<expression>(value->clone());
+	}
 };

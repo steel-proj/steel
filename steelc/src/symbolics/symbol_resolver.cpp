@@ -31,7 +31,7 @@ lookup_result symbol_resolver::lookup(const std::string& name, const std::shared
 	}
 
 	// search through module hierarchy
-	std::shared_ptr<module_entity> module = current_module;
+	module_entity* module = current_module;
 	for (; module != nullptr; module = module->parent_module) {
 		lookup_result result = module->symbols().lookup(name);
 		if (result.found()) {

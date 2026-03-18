@@ -46,7 +46,7 @@ public:
 		return id;
 	}
 
-	std::shared_ptr<type_declaration> declaration;
+	type_declaration* declaration = nullptr;
 
 private:
 	std::string identifier;

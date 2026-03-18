@@ -35,7 +35,7 @@ llvm::Type* llvm_type_converter::convert(const mir_type& ty) {
 		return strct;
 	}
 	else if (auto arr = t->as_array()) {
-		llvm::Type* element_type = convert(mir_type{ arr->base_type });
+		//llvm::Type* element_type = convert(mir_type{ arr->base_type });
 
 		// TODO
 		//return llvm::ArrayType::get(element_type, arr->size);

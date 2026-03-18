@@ -1,6 +1,7 @@
 #include "type_resolver.h"
 
 #include <ast/ast.h>
+#include <diagnostics/compilation_diagnostic_catalog.h>
 #include <representations/types/types_fwd.h>
 #include <representations/types/data_type.h>
 #include <representations/types/custom_type.h>
@@ -12,14 +13,23 @@
 #include <representations/entities/module_entity.h>
 #include <symbolics/lookup_result.h>
 #include <symbolics/symbol_error.h>
-#include <error/compilation_error_catalog.h>
 #include <utils/string_utils.h>
 
-void type_resolver::visit(std::shared_ptr<function_declaration> func) {
+void type_resolver::visit(compilation_unit& unit) {
+	resolver.import_tbl = &unit.import_tbl;
+	resolver.current_module = module_manager.get_global_module();
+	sym_table = &module_manager.get_global_module()->symbols();
+
+	for (auto& decl : unit.declarations) {
+		decl->accept(*this);
+	}
+}
+
+void type_resolver::visit(function_declaration& func) {
 	sym_table->push_scope();
 	sym_table->push_generic_scope();
 	// add generics to the current scope
-	for (const auto& generic : func->generics) {
+	for (const auto& generic : func.generics) {
 		generic->param_index = cur_generic_index++;
 		sym_table->add_symbol(generic);
 
@@ -27,71 +37,71 @@ void type_resolver::visit(std::shared_ptr<function_declaration> func) {
 	}
 
 	// resolve return type
-	if (!func->is_constructor) {
+	if (!func.is_constructor) {
 		// (if its a constructor we already know its return type)
-		resolve_type(func->return_type);
+		resolve_type(func.return_type);
 	}
 
 	// resolve parameter types
-	for (auto& param : func->parameters) {
+	for (auto& param : func.parameters) {
 		resolve_type(param->type);
 	}
 
-	if (func->body) {
-		func->body->accept(*this);
+	if (func.body) {
+		func.body->accept(*this);
 	}
 	sym_table->pop_generic_scope();
 	sym_table->pop_scope();
 }
-void type_resolver::visit(std::shared_ptr<variable_declaration> var) {
+void type_resolver::visit(variable_declaration& var) {
 	// resolve variable type
-	resolve_type(var->type);
+	resolve_type(var.type);
 }
-void type_resolver::visit(std::shared_ptr<type_declaration> decl) {
+void type_resolver::visit(type_declaration& decl) {
 	sym_table->push_scope();
 	sym_table->push_generic_scope();
 	// add generics to the current scope
-	for (const auto& generic : decl->generics) {
+	for (const auto& generic : decl.generics) {
 		generic->param_index = cur_generic_index++;
 		sym_table->add_symbol(generic);
 	}
 
 	// resolve member types
-	for (auto& member : decl->fields) {
+	for (auto& member : decl.fields) {
 		resolve_type(member->type);
 	}
 	// resolve constructor types
-	for (auto& constructor : decl->constructors) {
+	for (auto& constructor : decl.constructors) {
 		constructor->accept(*this);
 	}
 	// resolve method types
-	for (auto& method : decl->methods) {
+	for (auto& method : decl.methods) {
 		method->accept(*this);
 	}
 	// resolve operator types
-	for (auto& op : decl->operators) {
+	for (auto& op : decl.operators) {
 		op->accept(*this);
 	}
 
 	// resolve base types
-	for (type_ptr& base : decl->base_types) {
+	for (type_ptr& base : decl.base_types) {
 		resolve_type(base);
 	}
 	sym_table->pop_generic_scope();
 	sym_table->pop_scope();
 }
-void type_resolver::visit(std::shared_ptr<module_declaration> decl) {
-	resolver.current_module = decl->entity;
-	for (auto& decl : decl->declarations) {
-		decl->accept(*this);
+void type_resolver::visit(module_declaration& decl) {
+	resolver.current_module = decl.entity.get();
+	for (const auto& mdecl : decl.declarations) {
+		mdecl->accept(*this);
 	}
-	resolver.current_module = decl->entity->parent_module;
+	resolver.current_module = decl.entity->parent_module.get();
 }
-void type_resolver::visit(std::shared_ptr<function_call> func_call) {
-	for (auto& gen_arg : func_call->generic_args) {
+void type_resolver::visit(function_call& func_call) {
+	for (auto& gen_arg : func_call.generic_args) {
 		resolve_type(gen_arg);
 	}
-	for (auto& arg : func_call->args) {
+	for (auto& arg : func_call.args) {
 		arg->accept(*this);
 	}
 }

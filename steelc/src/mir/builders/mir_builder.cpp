@@ -44,7 +44,7 @@ mir_value mir_builder::build_neg(mir_operand operand, const std::string& result_
 	return build_binary_op(mir_instr_opcode::SUB, build_const_int(0, operand_type(operand)), operand, result_name);
 }
 mir_value mir_builder::build_not(mir_operand operand, const std::string& result_name) {
-	return mir_value();
+	return build_unary_op(mir_instr_opcode::NOT, operand, result_name);
 }
 mir_value mir_builder::build_binary_op(mir_instr_opcode opcode, mir_operand lhs, mir_operand rhs, const std::string& result_name) {
 	s_assert(check_type_match(lhs, rhs),
@@ -134,6 +134,7 @@ mir_operand mir_builder::build_select(mir_operand condition, mir_operand true_va
 			mir_operand{false_value}
 		}
 	});
+	return result;
 }
 
 mir_operand mir_builder::build_const_int(int64_t value, mir_type type) {
@@ -215,10 +216,10 @@ mir_value mir_builder::build_cast(mir_operand value, mir_type target_type, const
 }
 
 void mir_builder::insert_instr(const mir_instr&& instr) {
-	s_assert(ins_block != nullptr,
+	s_assert(_ins_block != nullptr,
 		"Cannot insert an instruction when insert block is null");
 
-	ins_block->push_instr(instr);
+	_ins_block->push_instr(instr);
 }
 
 bool mir_builder::check_type_match(mir_operand lhs, mir_operand rhs) {

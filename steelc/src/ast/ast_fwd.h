@@ -44,9 +44,7 @@ class generic_parameter;
 
 class attribute;
 
-using ast_ptr = std::shared_ptr<ast_node>;
-
 template<typename T>
-inline std::shared_ptr<T> ast_ptr_cast(const ast_ptr& ptr) {
-	return std::dynamic_pointer_cast<T>(ptr);
+inline T* ast_ptr_cast(const ast_node* ptr) {
+	return dynamic_cast<T*>(ptr);
 }

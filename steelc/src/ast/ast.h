@@ -1,5 +1,7 @@
 #pragma once
 
+#include <concepts>
+
 #include <lexer/token.h>
 
 // single include for all nodes
@@ -44,23 +46,20 @@
 
 // helper functions to create AST nodes
 template<typename T, typename... Args>
-inline std::shared_ptr<T> make_ast(token& ast_token, Args... args) {
-	static_assert(std::is_base_of<ast_node, T>::value, "T must derive from ast_node");
-	std::shared_ptr<T> node = std::make_shared<T>(std::forward<Args>(args)...);
+inline std::unique_ptr<T> make_ast(token& ast_token, Args... args) requires std::derived_from<T, ast_node> {
+	auto node = std::make_unique<T>(std::forward<Args>(args)...);
 	node->span = ast_token.span;
 	return node;
 }
 template<typename T, typename... Args>
-inline std::shared_ptr<T> make_ast(code_span span, Args... args) {
-	static_assert(std::is_base_of<ast_node, T>::value, "T must derive from ast_node");
-	std::shared_ptr<T> node = std::make_shared<T>(std::forward<Args>(args)...);
+inline std::unique_ptr<T> make_ast(code_span span, Args... args) requires std::derived_from<T, ast_node> {
+	auto node = std::make_unique<T>(std::forward<Args>(args)...);
 	node->span = span;
 	return node;
 }
 template<typename T, typename... Args>
-inline std::shared_ptr<T> make_ast(Args... args) {
-	static_assert(std::is_base_of<ast_node, T>::value, "T must derive from ast_node");
-	std::shared_ptr<T> node = std::make_shared<T>(std::forward<Args>(args)...);
+inline std::unique_ptr<T> make_ast(Args... args) requires std::derived_from<T, ast_node> {
+	auto node = std::make_unique<T>(std::forward<Args>(args)...);
 	node->span = code_span();
 	return node;
 }

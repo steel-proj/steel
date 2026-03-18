@@ -15,6 +15,10 @@ add_executable(steelc_tests
 	"lexer_tests/lexer_tests.cpp"	
 )
 
+target_include_directories(steelc_tests PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 target_link_libraries(steelc_tests PRIVATE
 	steelc_core
 )

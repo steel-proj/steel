@@ -17,7 +17,7 @@
 #include <output/output.h>
 #include <output/logging/log.h>
 #include <formatting/formatting.h>
-#include <formatting/error_formatting/error_formatter.h>
+#include <formatting/diagnostics/diagnostic_formatter.h>
 #include <diagnostics/diagnostics.h>
 #include <output/sinks/file_sink.h>
 #include <building/cache/source_metadata.h>
@@ -51,11 +51,12 @@ bool project_builder::load_project(const std::string& project_path) {
 	output::log::print("Loading project file at: \'{}\'\n", project_path);
 	try {
 		project_file = stproj_file::load(project_path);
+		return true;
 	}
 	catch (const bad_stproj_exception& err) {
 		diagnostics::error("Error loading project file: {}\n", err.message());
-		return false;
 	}
+	return false;
 }
 bool project_builder::build_project() {
 	mark_build_start();
@@ -119,11 +120,12 @@ bool project_builder::build_project() {
 			output::print(text_styles::SUCCESS, "Compilation succeeded. (Took {:.3f} seconds)\n", get_compilation_time());
 		}
 		else {
-			diagnostics::error("Compilation failed with {} error(s).\n", cmp.get_error_count());
+			const auto& diags = cmp.get_diagnostics();
+			diagnostics::error("Compilation failed with {} error(s).\n", diags.size());
 
-			for (const auto& err : cmp.get_errors()) {
+			for (const auto& d : diags) {
 				output::print("\n"); // add spacing between errors
-				diagnostics::print_compilation_error(err);
+				diagnostics::print_diagnostic(d);
 			}
 			output::print("\n"); // space after errors
 

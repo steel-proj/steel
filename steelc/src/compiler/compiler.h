@@ -4,7 +4,8 @@
 #include <string>
 #include <memory>
 
-#include <error/compilation_error.h>
+#include <compiler/passes/pass_manager.h>
+#include <diagnostics/diagnostics_engine.h>
 #include <ast/compilation_unit.h>
 #include <modules/module_manager.h>
 #include <compiler/compile_config.h>
@@ -21,25 +22,12 @@ public:
 
 	bool compile(const compile_config& cl_cfg, codegen_config& cg_cfg);
 
-	inline bool has_errors() const {
-		return !errors.empty();
-	}
-	inline bool has_warnings() const {
-		return !warnings.empty();
+	inline bool failed() const {
+		return diag_engine.error_count() > 0;
 	}
 
-	inline const std::vector<compilation_error>& get_errors() const {
-		return errors;
-	}
-	inline const std::vector<compilation_error>& get_warnings() const {
-		return warnings;
-	}
-
-	inline const size_t get_error_count() const {
-		return errors.size();
-	}
-	inline const size_t get_warning_count() const {
-		return warnings.size();
+	inline std::vector<compilation_diagnostic> get_diagnostics() const {
+		return diag_engine.get_diagnostics();
 	}
 
 	inline const codegen_result& get_result() {
@@ -47,15 +35,15 @@ public:
 	}
 
 private:
-	std::vector<std::shared_ptr<compilation_unit>> compilation_units;
+	std::vector<std::unique_ptr<compilation_unit>> compilation_units;
 
-	std::vector<compilation_error> errors;
-	std::vector<compilation_error> warnings;
-
+	diagnostics_engine diag_engine;
 	module_manager module_manager;
 
 	std::vector<source_file> sources;
 	codegen_result codegen_result;
 
+	void setup_default_ast_passes(pass_manager<compilation_unit>& pm);
+		
 	std::vector<std::string> read_source(std::string& path);
 };

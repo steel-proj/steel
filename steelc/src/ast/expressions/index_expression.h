@@ -2,7 +2,9 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
 #include <lexer/token_type.h>
 #include <lexer/token_utils.h>
@@ -10,13 +12,17 @@
 #include <representations/types/types_fwd.h>
 #include <representations/types/data_type.h>
 #include <representations/types/container_types.h>
+#include <utils/iclonable.h>
 
 class index_expression : public expression, public std::enable_shared_from_this<index_expression> {
 public:
-	ENABLE_ACCEPT(index_expression)
-		
-	index_expression(std::shared_ptr<expression> base, std::shared_ptr<expression> indexer)
-		: base(base), indexer(indexer) {
+	ENABLE_ACCEPT_AST(index_expression)
+	ENABLE_CLONE(index_expression, ast_node)
+
+public:
+	index_expression() = default;
+	index_expression(std::unique_ptr<expression> base, std::unique_ptr<expression> indexer)
+		: base(std::move(base)), indexer(std::move(indexer)) {
 	}
 
 	std::string string(int indent) const override {
@@ -25,15 +31,6 @@ public:
 		result += ind + " Base:\n" + base->string(indent + 1) + "\n";
 		result += ind + " Indexer:\n" + indexer->string(indent + 1) + "\n";
 		return result;
-	}
-
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<index_expression>(
-			std::dynamic_pointer_cast<expression>(base->clone()),
-			std::dynamic_pointer_cast<expression>(indexer->clone())
-		);
-		cloned->span = span;
-		return cloned;
 	}
 
 	type_ptr type() const override {
@@ -59,6 +56,14 @@ public:
 		return false;
 	}
 
-	std::shared_ptr<expression> base;
-	std::shared_ptr<expression> indexer;
+	std::unique_ptr<expression> base;
+	std::unique_ptr<expression> indexer;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		index_expression& index_target = ast_cast<index_expression&>(target);
+		index_target.base = ast_cast<expression>(base->clone());
+		index_target.indexer = ast_cast<expression>(indexer->clone());
+	}
 };

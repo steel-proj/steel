@@ -29,21 +29,22 @@ namespace formatting {
 	inline std::string format(std::format_string<Args...> fmt, Args&&... args) {
 		return std::vformat(fmt.get(), std::make_format_args(args...));
 	}
-	// basic std::string_view format
+
+	// basic std::string format (no compile time validation)
 	template<typename... Args>
-	inline std::string format(std::string_view fmt, Args&&... args) {
+	inline std::string vformat(std::string_view fmt, Args&&... args) {
 		return std::vformat(fmt, std::make_format_args(args...));
 	}
 
 	// styled_string format (retains styling information)
 	template<typename... Args>
-	inline styled_string format(const styled_string& ss, Args&&... args) {
+	inline styled_string format_styled(const styled_string& ss, Args&&... args) {
 		return styled_string(ss.get_style(), std::vformat(ss.get_text(), std::make_format_args(args...)));
 	}
 
 	// styled_paragraph format (retains styling information)
 	template<typename... Args>
-	inline styled_paragraph format(const styled_paragraph& sp, Args&&... args) {
+	inline styled_paragraph format_paragraph(const styled_paragraph& sp, Args&&... args) {
 		styled_paragraph result;
 		for (const auto& segment : sp.get_segments()) {
 			result << format(segment, args...);

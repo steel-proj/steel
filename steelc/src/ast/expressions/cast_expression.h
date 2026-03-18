@@ -2,15 +2,21 @@
 
 #include <string>
 #include <memory>
+#include <utility>
 
+#include <ast/ast_visitor.h>
 #include <ast/expressions/expression.h>
+#include <utils/iclonable.h>
 
 class cast_expression : public expression, public std::enable_shared_from_this<cast_expression> {
 public:
-	ENABLE_ACCEPT(cast_expression)
+	ENABLE_ACCEPT_AST(cast_expression)
+	ENABLE_CLONE(cast_expression, ast_node)
 
-	cast_expression(type_ptr cast_type, std::shared_ptr<expression> expr)
-		: cast_type(cast_type), expr(expr) {
+public:
+	cast_expression() = default;
+	cast_expression(type_ptr cast_type, std::unique_ptr<expression> expr)
+		: cast_type(cast_type), expr(std::move(expr)) {
 	}
 
 	std::string string(int indent) const override {
@@ -19,15 +25,6 @@ public:
 		result += ind + " Cast Type: " + cast_type->name() + "\n";
 		result += ind + " Expression: " + expr->string(indent + 1) + "\n";
 		return result;
-	}
-
-	ast_ptr clone() const override {
-		auto cloned = std::make_shared<cast_expression>(
-			cast_type,
-			std::dynamic_pointer_cast<expression>(expr->clone())
-		);
-		cloned->span = span;
-		return cloned;
 	}
 
 	type_ptr type() const override {
@@ -44,5 +41,13 @@ public:
 	}
 
 	type_ptr cast_type;
-	std::shared_ptr<expression> expr;
+	std::unique_ptr<expression> expr;
+
+protected:
+	virtual void clone_into(ast_node& target) const override {
+		expression::clone_into(target);
+		cast_expression& cast_target = ast_cast<cast_expression&>(target);
+		cast_target.cast_type = cast_type;
+		cast_target.expr = ast_cast<expression>(expr->clone());
+	}
 };

@@ -4,13 +4,14 @@
 
 #include <representations/entities/entities_fwd.h>
 #include <representations/entities/entity_ref.h>
+#include <error/internal.h>
 
 entity_ptr entity::UNRESOLVED = std::make_shared<entity>(ENTITY_UNRESOLVED);
 
 std::string entity::kind_string() const {
     switch (e_kind) {
     case ENTITY_UNRESOLVED:
-			return "<unresolved>";
+		return "<unresolved>";
 
 	case ENTITY_VARIABLE:
 		return "variable";
@@ -23,6 +24,7 @@ std::string entity::kind_string() const {
 	case ENTITY_GENERIC_PARAM:
 		return "generic parameter";
     }
+	s_unreachable("Unknown entity kind: {}", static_cast<int>(e_kind));
 }
 
 entity_ref entity::ref() const {

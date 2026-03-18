@@ -6,36 +6,39 @@
 #include <unordered_set>
 
 #include <ast/ast_visitor.h>
-#include <compiler/compilation_pass.h>
+#include <ast/ast_pass.h>
 #include <compiler/compilation_ctx.h>
+#include <compiler/passes/ir_pass.h>
 #include <modules/module_manager.h>
 #include <symbolics/symbol_table.h>
 #include <representations/entities/module_entity.h>
 
-class declaration_collector : public ast_visitor, public compilation_pass {
+class declaration_collector : public ast_pass {
 public:
-	declaration_collector(std::shared_ptr<compilation_unit> unit, compilation_ctx& ctx)
-		: unit(unit), module_manager(ctx.module_manager), sym_table(&ctx.module_manager.get_global_module()->symbols()), compilation_pass(unit) {
+	declaration_collector(compilation_ctx& ctx)
+		: ast_pass(ctx), module_manager(ctx.module_manager), sym_table(&ctx.module_manager.get_global_module()->symbols()) {
 		current_module = module_manager.get_global_module();
 	}
 
+	void visit(compilation_unit& unit) override;
+
 	// declarations
-	void visit(std::shared_ptr<function_declaration> func_decl) override;
-	void visit(std::shared_ptr<variable_declaration> var_decl) override;
-	void visit(std::shared_ptr<type_declaration> type_decl) override;
-	void visit(std::shared_ptr<module_declaration> mod_decl) override;
-	void visit(std::shared_ptr<enum_declaration> enum_decl) override;
+	void visit(function_declaration& func_decl) override;
+	void visit(variable_declaration& var_decl) override;
+	void visit(type_declaration& type_decl) override;
+	void visit(module_declaration& mod_decl) override;
+	void visit(enum_declaration& enum_decl) override;
 
 	// top-level statements
-	void visit(std::shared_ptr<import_statement> import_stmt) override;
+	void visit(import_statement& import_stmt) override;
 
 private:
-	std::shared_ptr<compilation_unit> unit;
 	symbol_table* sym_table;
 	module_manager& module_manager;
 
-	std::shared_ptr<function_declaration> current_function;
-	std::shared_ptr<function_declaration> current_constructor;
-	std::shared_ptr<type_declaration> current_type;
-	std::shared_ptr<module_entity> current_module; // should never be null - at least the global module
+	compilation_unit* current_unit = nullptr;
+	std::shared_ptr<function_declaration> current_function = nullptr;
+	std::shared_ptr<function_declaration> current_constructor = nullptr;
+	std::shared_ptr<type_declaration> current_type = nullptr;
+	module_entity* current_module = nullptr; // should never be null - at least the global module
 };

@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <cstdlib>
 
 #include <codegen/code_artifact.h>
 #include <codegen/codegen_config.h>
@@ -15,6 +16,7 @@
 #include <sys/host_defs.h>
 #include <sys/platform.h>
 #include <sys/shell.h>
+#include <sys/env.h>
 #include <diagnostics/diagnostics.h>
 
 namespace fs = std::filesystem;
@@ -116,7 +118,7 @@ link_result coff_linker::link(const link_data& data) {
 	cb << "/NOLOGO";
 
 	// execute linker
-	int ec = shell::exec("\"" + cb.build() + "\"");
+	int ec = sys::shell::exec("\"" + cb.build() + "\"");
 	if (ec != 0) {
 		return link_error{
 			.message = "Linker failed with exit code: " + std::to_string(ec)
@@ -173,25 +175,29 @@ std::vector<std::string> coff_linker::get_stdlib_paths(platform_arch target, var
 }
 
 std::filesystem::path coff_linker::find_vcvarsall() {
-	static const std::string vcvarsall_relative = "VC/Auxiliary/Build/vcvarsall.bat";
+	const char* vcvarsall_relative = "VC/Auxiliary/Build/vcvarsall.bat";
 
 	// try VSINSTALLDIR
-	if (const char* vsdir = std::getenv("VSINSTALLDIR")) {
-		auto p = fs::path(vsdir) / vcvarsall_relative;
+	char* buffer;
+	size_t buffer_size = 0;
+	if (_dupenv_s(&buffer, &buffer_size, "VSINSTALLDIR")) {
+		auto p = fs::path(buffer) / vcvarsall_relative;
 		if (fs::exists(p)) return p;
 	}
 
 	// try vswhere.exe
-	fs::path pf86 = std::getenv("ProgramFiles(x86)");
-	fs::path vswhere = path_utils::normalize(pf86 / "Microsoft Visual Studio/Installer/vswhere.exe");
-	if (fs::exists(vswhere)) {
-		std::string command = "\"" + vswhere.string() + "\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath";
-		std::string output = shell::exec_piped(command);
-		std::istringstream iss(output);
-		std::string line;
-		while (std::getline(iss, line)) {
-			auto p = fs::path(line) / vcvarsall_relative;
-			if (fs::exists(p)) return path_utils::normalize(p);
+	std::string pf86;
+	if (sys::env::get_var("ProgramFiles(x86)", pf86)) {
+		fs::path vswhere = path_utils::normalize(fs::path(pf86) / "Microsoft Visual Studio/Installer/vswhere.exe");
+		if (fs::exists(vswhere)) {
+			std::string command = "\"" + vswhere.string() + "\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath";
+			std::string output = sys::shell::exec_piped(command);
+			std::istringstream iss(output);
+			std::string line;
+			while (std::getline(iss, line)) {
+				auto p = fs::path(line) / vcvarsall_relative;
+				if (fs::exists(p)) return path_utils::normalize(p);
+			}
 		}
 	}
 
@@ -219,7 +225,7 @@ std::unordered_map<std::string, std::vector<std::string>> coff_linker::capture_v
 	std::string host_target = get_host_target_string(target);
 
 	std::string command = "call \"" + vcvarsall_path.string() + "\" " + host_target + " > nul 2>&1 && set";
-	std::string output = shell::exec_piped(command);
+	std::string output = sys::shell::exec_piped(command);
 	std::unordered_map<std::string, std::vector<std::string>> env_vars;
 	std::istringstream iss(output);
 	std::string line;

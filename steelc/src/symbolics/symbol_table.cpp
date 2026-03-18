@@ -45,7 +45,7 @@ void symbol_table::pop_generic_scope()
 	}
 }
 
-add_symbol_result symbol_table::add_symbol(entity_ptr entity, std::shared_ptr<type_entity> owner) {
+add_symbol_result symbol_table::add_symbol(std::shared_ptr<entity> entity, std::shared_ptr<type_entity> owner) {
 	symbol_error err = SYMBOL_OK;
 	switch (entity->kind()) {
 	case ENTITY_VARIABLE: {
@@ -165,7 +165,7 @@ lookup_result symbol_table::get_type(const std::string& name) const {
 	}
 	return {};
 }
-lookup_result symbol_table::get_enum(const std::string& name) const {
+lookup_result symbol_table::get_enum(const std::string&) const {
 	return lookup_result();
 }
 lookup_result symbol_table::get_module(const std::string& name) const {

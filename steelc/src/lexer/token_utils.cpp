@@ -148,7 +148,7 @@ int op_len(token_type tk) {
 	const auto& operators = get_operators();
 	for (const auto& op : operators) {
 		if (op.second == tk) {
-			return op.first.size();
+			return static_cast<int>(op.first.size());
 		}
 	}
 	return 0;

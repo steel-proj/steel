@@ -14,7 +14,7 @@
 
 class compilation_unit : public ast_node, public std::enable_shared_from_this<compilation_unit> {
 public:
-	ENABLE_ACCEPT(compilation_unit)
+	ENABLE_ACCEPT_AST(compilation_unit)
 
 	compilation_unit() {
 		static unsigned int next_unit_id = 0;
@@ -35,7 +35,7 @@ public:
 	}
 
 	std::shared_ptr<source_file> source_file;
-	std::vector<ast_ptr> declarations;
+	std::vector<std::unique_ptr<ast_node>> declarations;
 	import_table import_tbl;
 	unsigned int unit_id;
 };

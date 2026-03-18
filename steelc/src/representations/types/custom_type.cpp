@@ -47,11 +47,14 @@ bool custom_type::operator==(const type_ptr& other) const {
 }
 
 int custom_type::size_of() const {
+	return -1;
+	/*
     int size = 0;
     if (declaration) {
         
     }
     return -1;
+	*/
 }
 
 std::shared_ptr<data_type> custom_type::clone() const {
